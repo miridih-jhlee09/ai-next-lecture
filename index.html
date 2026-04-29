@@ -1,0 +1,3350 @@
+<!DOCTYPE html>
+
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI로 일하는 IT 실무자의 다음 시대</title>
+<meta name="description" content="AI 워크플로우 실전 강연 — 판단은 사람이, 실행은 AI가. 맥락 부여부터 운영까지 7단계 워크플로우와 실전 팁 12가지."/>
+<style>
+  :root {
+    --bg:       #f7f7f5;
+    --surface:  #ffffff;
+    --surface2: #f0f0ed;
+    --border:   #e2e2de;
+    --border2:  #d4d4cf;
+
+    --orange:    #c96500;
+    --amber:     #f59e0b;
+    --orange-bg: #fff8ee;
+    --orange-br: #fcd89a;
+
+    --ink:       #2e2c29;   /* 타이틀·본문 — 완전 블랙 지양 */
+    --ink-dim:   #5c5a56;   /* 서브텍스트·설명 */
+    --ink-dimmer:#8a8a86;   /* 캡션·레이블·힌트 */
+
+    --green:  #166534;
+    --red:    #b91c1c;
+
+    /* ── 폰트 사이즈 스케일 (8단계) ── */
+    --fs-display:  clamp(32px, 46px, 52px);
+    --fs-h-lg:     clamp(24px, 38px, 42px);
+    --fs-title:    clamp(20px, 24px, 26px);
+    --fs-title-sm: clamp(19px, 21px, 23px);
+    --fs-lead:     clamp(17px, 19px, 20px);
+    --fs-body:     clamp(16px, 18px, 19px);
+    --fs-body-sm:  clamp(15px, 16px, 17px);
+    --fs-caption:  12px;
+    --fs-tiny:     11px;
+
+    /* ── 의미 색상 토큰 ── */
+    --good-bg: #dcfce7;
+    --good-br: #bbf7d0;
+    --good-fg: #166534;
+
+    --bad-bg:  #fef2f2;
+    --bad-br:  #fecaca;
+    --bad-fg:  #b91c1c;
+
+    --info-bg: #eff6ff;
+    --info-br: #bfdbfe;
+    --info-fg: #1d4ed8;
+
+    --warn-bg: var(--orange-bg);
+    --warn-br: var(--orange-br);
+    --warn-fg: var(--orange);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Pretendard', 'Apple SD Gothic Neo', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+  }
+
+  /* 16:9 고정 스테이지 (1280×720). JS로 scale만 변경해서 단순 확대/축소. */
+  .deck {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 1280px;
+    height: 720px;
+    transform-origin: center center;
+    transform: translate(-50%, -50%) scale(1);
+    overflow: hidden;
+    background: var(--bg);
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 48px 80px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    overflow: hidden;
+  }
+  .slide.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* 진행 바 */
+  .progress-bar {
+    position: absolute;
+    bottom: 0; left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--orange), var(--amber));
+    transition: width 0.3s ease;
+    z-index: 10000;
+  }
+
+  /* 슬라이드 번호 */
+  .slide-num {
+    position: absolute;
+    bottom: 14px; right: 20px;
+    font-size: 11px;
+    color: var(--ink-dimmer);
+    letter-spacing: 0.08em;
+    z-index: 100;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── 타이포 ── */
+  .eyebrow {
+    font-size: 18px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-dimmer);
+    margin-bottom: 20px;
+    font-weight: 600;
+  }
+
+  h1 {
+    font-size: clamp(44px, 62px, 80px);
+    font-weight: 800;
+    line-height: 1.18;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+  }
+  h2 {
+    font-size: clamp(34px, 56px, 64px);
+    font-weight: 800;
+    line-height: 1.22;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+  }
+  h3 {
+    font-size: clamp(21px, 30px, 32px);
+    font-weight: 600;
+    line-height: 1.45;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+
+  .lead {
+    font-size: clamp(21px, 27px, 29px);
+    color: var(--ink-dim);
+    line-height: 1.75;
+    margin-top: 16px;
+  }
+
+  .highlight { color: var(--orange); }
+  .em    { color: var(--orange); font-weight: 600; }
+  .dim   { color: var(--ink-dim); }
+  .dimmer{ color: var(--ink-dimmer); }
+
+  /* ── 구분선 ── */
+  .rule {
+    width: 36px; height: 2px;
+    background: linear-gradient(90deg, var(--orange), var(--amber));
+    border-radius: 99px;
+    margin: 16px auto;
+  }
+
+  /* ── 카드 ── */
+  .card {
+    background: rgba(255, 255, 255, 0.97);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 26px;
+  }
+  /* 카드 내부 bg-surface2 강제 무효화 — 카드는 항상 흰색 97% */
+  .card.bg-surface2 {
+    background: rgba(255, 255, 255, 0.97);
+  }
+  .card-title {
+    font-size: 16px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-dimmer);
+    margin-bottom: 14px;
+    font-weight: 700;
+  }
+  .card p {
+    font-size: clamp(18px,22px,22px);
+    color: var(--ink-dim);
+    line-height: 1.8;
+  }
+  .card h3 { margin-bottom: 12px; }
+
+  /* ── 핵심 한 줄 강조 박스 ── */
+  .key-line {
+    background: var(--orange-bg);
+    border: 2px solid var(--orange-br);
+    border-left: 6px solid var(--orange);
+    border-radius: 10px;
+    padding: 20px 24px;
+    font-size: clamp(20px,26px,28px);
+    font-weight: 800;
+    color: var(--ink);
+    line-height: 1.5;
+    margin-top: 18px;
+    word-break: keep-all;
+  }
+
+  /* ── 리스트 ── */
+  .list {
+    list-style: none;
+    width: 100%;
+    text-align: left;
+  }
+  .list li {
+    font-size: clamp(18px,24px,25px);
+    line-height: 1.6;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    color: var(--ink);
+  }
+  .list li:last-child { border-bottom: none; }
+  .list li .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--ink-dimmer);
+    flex-shrink: 0;
+    margin-top: 6px;
+  }
+  .list li .dot.red { background: var(--red); }
+  .list li .dot.o { background: var(--orange); }
+  .list li > *:not(.dot) { flex: 1; min-width: 0; }
+
+  /* ── 그리드 ── */
+  .cols-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    width: 100%;
+  }
+  .cols-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    width: 100%;
+  }
+
+  /* ── 두 컬럼 레이아웃 ── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    width: 100%;
+    align-items: center;
+    margin: 0 auto;
+    justify-items: stretch;
+  }
+  .two-col.center { align-items: center; }
+  .left { text-align: left; }
+  .left h2  { text-align: left; }
+  .left .lead { text-align: left; }
+
+  /* ── 배지 ── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 10px;
+    padding: 4px 10px;
+    border-radius: 99px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .b-now  { background: var(--good-bg); border: 1px solid var(--good-br); color: var(--good-fg); }
+  .b-soon { background: var(--warn-bg); border: 1px solid var(--warn-br); color: var(--warn-fg); }
+  .b-must { background: var(--bad-bg);  border: 1px solid var(--bad-br);  color: var(--bad-fg); }
+
+  /* ── 애니메이션 — nth-child 대신 인라인 delay로 관리 ── */
+  .slide.active .anim { animation: fadeUp 0.4s ease both; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── 워크플로우 슬라이드 ── */
+  .wf-slide {
+    align-items: flex-start;
+    padding: 44px 80px;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .wf-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    width: calc(100% + 16px);
+    margin-left: -8px;
+    margin-right: -8px;
+  }
+  .wf-row > .card {
+    margin-left: 0;
+    margin-right: 0;
+  }
+  .wf-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 12px;
+  }
+  .wf-chip {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 99px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    color: var(--ink-dim);
+    white-space: nowrap;
+  }
+  .wf-chip.hi {
+    background: var(--orange-bg);
+    border-color: var(--orange-br);
+    color: var(--orange);
+  }
+  .wf-demo-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+  .wf-demo-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    background: var(--surface);
+    border: 1.5px solid var(--orange-br);
+    color: var(--orange);
+    font-size: 16px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background 0.15s;
+  }
+  .wf-demo-link:hover {
+    background: var(--orange-bg);
+  }
+  .wf-demo-link .wf-demo-icon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
+  .wf-demo-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    color: var(--ink-dimmer);
+    text-transform: uppercase;
+    margin-top: 18px;
+    margin-bottom: 4px;
+  }
+
+  /* ── 시연 슬라이드 카드 overflow ── */
+  .demo-row {
+    width: calc(100% + 16px);
+    margin-left: -8px;
+    margin-right: -8px;
+  }
+
+  /* ── 팁 슬라이드 번호 뱃지 ── */
+  .tip-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: var(--orange);
+    color: #fff;
+    font-size: 32px;
+    font-weight: 800;
+    flex-shrink: 0;
+    box-shadow: 0 6px 20px rgba(201,101,0,0.35);
+  }
+
+  /* ── 플로우 바 ── */
+  .flow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .fi {
+    font-size:clamp(15px,16px,17px); padding: 7px 13px;
+    border: 1px solid var(--border2); border-radius: 6px;
+    background: var(--surface); white-space: nowrap; color: var(--ink-dim);
+  }
+  .fi.on {
+    border-color: var(--orange-br); color: var(--orange);
+    background: var(--orange-bg); font-weight: 600;
+  }
+  .fa { color: var(--ink-dimmer); font-size: 12px; flex-shrink: 0; }
+
+  /* ── 이미지 플레이스홀더 ── */
+  .img-placeholder {
+    border: 2px dashed var(--border2);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ink-dimmer);
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    min-height: 140px;
+    background: var(--surface2);
+  }
+
+  /* ── 스크립트 힌트 오버레이 ── */
+  .script-overlay {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(20, 18, 14, 0.90);
+    color: #f0ede6;
+    font-size: clamp(14px,18px,18px);
+    line-height: 1.7;
+    padding: 14px 40px 22px;
+    z-index: 10001;
+    border-top: 2px solid var(--orange);
+    backdrop-filter: blur(6px);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+  }
+  .script-overlay.visible { opacity: 1; visibility: visible; }
+  .script-overlay .s-label {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--orange);
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  /* ── 대비 컴포넌트 ── */
+  .vs-wrap {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 20px;
+    width: 100%;
+    align-items: center;
+  }
+  .vs-label {
+    text-align: center;
+    font-size:clamp(15px,16px,17px);
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    padding: 6px 0 14px;
+  }
+  .vs-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--ink-dimmer);
+    flex-shrink: 0;
+  }
+
+  /* ── 스페이스 이븐 래퍼 (S02/S04/S06/S08/S09/S11) ── */
+  .evenly-wrap {
+    position: absolute; inset: 0;
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    padding: 0 80px;
+  }
+  .evenly-inner {
+    width: 100%;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    padding: 28px 0;
+  }
+
+  /* ── 카드 변형 ── */
+  /* ── 레이블 (uppercase small) ── */
+  .label-sm {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-dimmer);
+    margin-bottom: 14px;
+  }
+  .label-sm.orange { color: var(--orange); }
+
+  /* ── 유틸리티 클래스 ── */
+  /* 폰트 사이즈 */
+  .fs-display  { font-size: var(--fs-display); }
+  .fs-h-lg     { font-size: var(--fs-h-lg); }
+  .fs-title    { font-size: var(--fs-title); }
+  .fs-title-sm { font-size: var(--fs-title-sm); }
+  .fs-lead     { font-size: var(--fs-lead); }
+  .fs-body     { font-size: var(--fs-body); }
+  .fs-body-sm  { font-size: var(--fs-body-sm); }
+  .fs-caption  { font-size: var(--fs-caption); }
+  .fs-tiny     { font-size: var(--fs-tiny); }
+
+  /* 폰트 굵기 */
+  .fw-400 { font-weight: 400; }
+  .fw-500 { font-weight: 500; }
+  .fw-600 { font-weight: 600; }
+  .fw-700 { font-weight: 700; }
+  .fw-800 { font-weight: 800; }
+
+  /* 색상 */
+  .fg-ink     { color: var(--ink); }
+  .fg-dim     { color: var(--ink-dim); }
+  .fg-dimmer  { color: var(--ink-dimmer); }
+  .fg-orange  { color: var(--orange); }
+  .fg-good    { color: var(--good-fg); }
+  .fg-bad     { color: var(--bad-fg); }
+  .fg-info    { color: var(--info-fg); }
+  .fg-white   { color: #fff; }
+
+  /* 배경 */
+  .bg-surface   { background: var(--surface); }
+  .bg-surface2  { background: var(--surface2); }
+  .bg-warn      { background: var(--warn-bg); }
+  .bg-good      { background: var(--good-bg); }
+  .bg-bad       { background: var(--bad-bg); }
+  .bg-info      { background: var(--info-bg); }
+  .bg-ink       { background: var(--ink); }       /* 다크 배경 (완전 블랙 아님) */
+
+  /* 의미 박스 (배경+테두리+글씨 한 묶음) */
+  .box-warn { background: var(--warn-bg); border: 1px solid var(--warn-br); color: var(--warn-fg); }
+  .box-good { background: var(--good-bg); border: 1px solid var(--good-br); color: var(--good-fg); }
+  .box-bad  { background: var(--bad-bg);  border: 1px solid var(--bad-br);  color: var(--bad-fg);  }
+  .box-info { background: var(--info-bg); border: 1px solid var(--info-br); color: var(--info-fg); }
+
+  /* 정렬 */
+  .t-center { text-align: center; }
+  .t-left   { text-align: left; }
+  .t-right  { text-align: right; }
+
+  /* 플렉스 */
+  .row         { display: flex; flex-direction: row; }
+  .stack       { display: flex; flex-direction: column; }
+  .row-center  { display: flex; align-items: center; }
+  .ai-center   { align-items: center; }
+  .ai-start    { align-items: flex-start; }
+  .ai-stretch  { align-items: stretch; }
+  .jc-center   { justify-content: center; }
+  .jc-between  { justify-content: space-between; }
+  .flex-1      { flex: 1; min-width: 0; }
+  .flex-wrap   { flex-wrap: wrap; }
+
+  /* 간격 (gap) */
+  .g-4  { gap: 4px; }
+  .g-6  { gap: 6px; }
+  .g-8  { gap: 8px; }
+  .g-10 { gap: 10px; }
+  .g-12 { gap: 12px; }
+  .g-14 { gap: 14px; }
+  .g-16 { gap: 16px; }
+  .g-18 { gap: 18px; }
+  .g-20 { gap: 20px; }
+  .g-24 { gap: 24px; }
+
+  /* margin-top */
+  .mt-0  { margin-top: 0; }
+  .mt-4  { margin-top: 4px; }
+  .mt-6  { margin-top: 6px; }
+  .mt-8  { margin-top: 8px; }
+  .mt-10 { margin-top: 10px; }
+  .mt-12 { margin-top: 12px; }
+  .mt-14 { margin-top: 14px; }
+  .mt-16 { margin-top: 16px; }
+  .mt-18 { margin-top: 18px; }
+  .mt-20 { margin-top: 20px; }
+  .mt-24 { margin-top: 24px; }
+  .mt-28 { margin-top: 28px; }
+
+  /* margin-bottom */
+  .mb-0  { margin-bottom: 0; }
+  .mb-4  { margin-bottom: 4px; }
+  .mb-6  { margin-bottom: 6px; }
+  .mb-8  { margin-bottom: 8px; }
+  .mb-10 { margin-bottom: 10px; }
+  .mb-12 { margin-bottom: 12px; }
+  .mb-14 { margin-bottom: 14px; }
+  .mb-16 { margin-bottom: 16px; }
+  .mb-20 { margin-bottom: 20px; }
+
+  /* 너비/맥스 */
+  .w-full       { width: 100%; }
+  .mw-content   { max-width: 1120px; }
+  .w-content    { width: 100%; max-width: 1120px; }
+
+  /* padding 0 */
+  .p-0  { padding: 0; }
+
+  /* word-break keep-all (한글 줄바꿈) */
+  .kw { word-break: keep-all; }
+
+  /* fill: position absolute inset 0 */
+  .fill { position: absolute; inset: 0; }
+
+  /* 포지션/inset */
+  .pos-abs { position: absolute; }
+  .pos-rel { position: relative; }
+  .inset-0 { inset: 0; }
+  .pe-none { pointer-events: none; }
+
+  /* 그리드 */
+  .grid          { display: grid; }
+  .grid-2        { display: grid; grid-template-columns: 1fr 1fr; }
+  .grid-3        { display: grid; grid-template-columns: 1fr 1fr 1fr; }
+
+  /* 높이/사이즈 */
+  .h-full        { height: 100%; }
+  .h-auto        { height: auto; }
+  .min-w-0       { min-width: 0; }
+  .flex-shrink-0 { flex-shrink: 0; }
+
+  /* 보더 */
+  .bd        { border: 1px solid var(--border); }
+  .bd-2      { border: 1px solid var(--border2); }
+  .bd-orange { border: 1px solid var(--orange-br); }
+  .bd-good   { border: 1px solid var(--good-br); }
+  .bd-bad    { border: 1px solid var(--bad-br); }
+  .bd-info   { border: 1px solid var(--info-br); }
+
+  /* border-radius */
+  .r-4    { border-radius: 4px; }
+  .r-5    { border-radius: 5px; }
+  .r-6    { border-radius: 6px; }
+  .r-8    { border-radius: 8px; }
+  .r-10   { border-radius: 10px; }
+  .r-12   { border-radius: 12px; }
+  .r-14   { border-radius: 14px; }
+  .r-16   { border-radius: 16px; }
+  .r-20   { border-radius: 20px; }
+  .r-pill { border-radius: 99px; }
+  .r-full { border-radius: 50%; }
+
+  /* 텍스트 변형 */
+  .t-upper   { text-transform: uppercase; }
+  .ls-tight1 { letter-spacing: -0.01em; }
+  .ls-tight2 { letter-spacing: -0.02em; }
+  .ls-tight3 { letter-spacing: -0.03em; }
+  .ls-wide1  { letter-spacing: 0.06em; }
+  .ls-wide2  { letter-spacing: 0.10em; }
+  .ls-wide3  { letter-spacing: 0.12em; }
+  .ls-wide4  { letter-spacing: 0.14em; }
+  .ls-wide5  { letter-spacing: 0.16em; }
+  .ls-wide6  { letter-spacing: 0.18em; }
+  .ls-wide7  { letter-spacing: 0.20em; }
+  .ls-wide8  { letter-spacing: 0.22em; }
+
+  /* line-height */
+  .lh-1   { line-height: 1; }
+  .lh-12  { line-height: 1.2; }
+  .lh-14  { line-height: 1.4; }
+  .lh-15  { line-height: 1.5; }
+  .lh-16  { line-height: 1.6; }
+  .lh-17  { line-height: 1.7; }
+  .lh-18  { line-height: 1.8; }
+
+  /* margin */
+  .m-0     { margin: 0; }
+  .mt-auto { margin-top: auto; }
+  .mx-auto { margin-left: auto; margin-right: auto; }
+
+  /* 강조 배경 */
+  .bg-orange { background: var(--orange); }
+
+  /* 폰트 패밀리 */
+  .ff-mono { font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace; }
+
+  /* 패딩 페어 */
+  .pad-3-10  { padding: 3px 10px; }
+  .pad-4-8   { padding: 4px 8px; }
+  .pad-4-10  { padding: 4px 10px; }
+  .pad-6-12  { padding: 6px 12px; }
+  .pad-8-12  { padding: 8px 12px; }
+  .pad-8-14  { padding: 8px 14px; }
+  .pad-10-14 { padding: 10px 14px; }
+  .pad-10-16 { padding: 10px 16px; }
+  .pad-10-18 { padding: 10px 18px; }
+  .pad-12-16 { padding: 12px 16px; }
+  .pad-12-18 { padding: 12px 18px; }
+  .pad-14-20 { padding: 14px 20px; }
+  .pad-16-20 { padding: 16px 20px; }
+  .pad-20-24 { padding: 20px 24px; }
+  .pad-24-28 { padding: 24px 28px; }
+
+  /* 슬라이드 공통 패딩 — 초급 기준(40px)으로 통일 */
+  .slide-pad { padding: 36px 40px; }
+
+  /* 풀블리드 슬라이드(p-0) 내부 컨테이너 콘텐츠 세로 가운데 정렬
+     중·고급 minified 슬라이드들(.slide.p-0 > .pos-abs.inset-0.slide-pad)이
+     초급 슬라이드와 동일하게 1280×720 캔버스 안에서 콘텐츠가 가운데 정렬되도록 */
+  .slide.p-0 > .pos-abs.inset-0.slide-pad,
+  .slide.slide-pad > .pos-abs.inset-0.slide-pad {
+    justify-content: center !important;
+  }
+
+  /* font-style */
+  .italic { font-style: italic; }
+
+  /* overflow */
+  .ov-hidden { overflow: hidden; }
+  .ov-auto   { overflow: auto; }
+
+  /* min-* */
+  .min-h-0 { min-height: 0; }
+
+  /* margin shortcuts */
+  .m-0-auto { margin: 0 auto; }
+  .mb-2     { margin-bottom: 2px; }
+
+  /* 2px 보더 */
+  .bd-2-orange { border: 2px solid var(--orange-br); }
+  .bd-2-good   { border: 2px solid var(--good-br); }
+  .bd-2-bad    { border: 2px solid var(--bad-br); }
+
+  /* border-color */
+  .bc-orange { border-color: var(--orange-br); }
+  .bc-good   { border-color: var(--good-br); }
+  .bc-bad    { border-color: var(--bad-br); }
+  .bc-info   { border-color: var(--info-br); }
+
+  /* 정사각 사이즈 */
+  .sq-24 { width: 24px; height: 24px; }
+  .sq-28 { width: 28px; height: 28px; }
+  .sq-32 { width: 32px; height: 32px; }
+  .sq-36 { width: 36px; height: 36px; }
+  .sq-44 { width: 44px; height: 44px; }
+  .sq-56 { width: 56px; height: 56px; }
+  .sq-72 { width: 72px; height: 72px; }
+
+  /* 얇은 수평선 */
+  .h-2px { height: 2px; }
+
+  /* soft 의미 컬러 배경 */
+  .bg-good-soft { background: #f0fdf4; }
+  .bg-bad-soft  { background: #fff5f5; }
+  .bg-info-soft { background: #f0f4ff; }
+  .bg-border    { background: var(--border); }
+  .bg-border2   { background: var(--border2); }
+
+  /* ── Phase 4 추가: hero 폰트, 라인하이트, 강조 보더, 그리드 ── */
+  /* hero 폰트 (h1·h2 추가 강조용) */
+  .fs-hero    { font-size: clamp(40px, 64px, 72px); }
+  .fs-hero-lg { font-size: clamp(56px, 84px, 92px); }
+  .fs-hero-xl { font-size: clamp(80px, 110px, 120px); }
+
+  /* 라인하이트 추가 */
+  .lh-11   { line-height: 1.1; }
+  .lh-155  { line-height: 1.55; }
+  .lh-165  { line-height: 1.65; }
+  .lh-185  { line-height: 1.85; }
+  .lh-19   { line-height: 1.9; }
+  .lh-20   { line-height: 2.0; }
+  .lh-21   { line-height: 2.1; }
+
+  /* 폰트 굵기 추가 */
+  .fw-900 { font-weight: 900; }
+
+  /* margin 추가 */
+  .mt-3    { margin-top: 3px; }
+  .mb-18   { margin-bottom: 18px; }
+  .pl-18   { padding-left: 18px; }
+  .pl-20   { padding-left: 20px; }
+
+  /* 추가 패딩 */
+  .pad-10-12 { padding: 10px 12px; }
+  .pad-10-8  { padding: 10px 8px; }
+  .pad-14-16 { padding: 14px 16px; }
+  .pad-14-18 { padding: 14px 18px; }
+  .pad-16-18 { padding: 16px 18px; }
+  .pad-18-22 { padding: 18px 22px; }
+  .pad-8-0   { padding: 8px 0; }
+
+  /* 좌측 강조 보더 */
+  .bd-l-orange { border-left: 4px solid var(--orange); }
+  .bd-l-good   { border-left: 4px solid var(--good-fg); }
+  .bd-l-bad    { border-left: 4px solid var(--bad-fg); }
+
+  /* 1.5px 강조 보더 */
+  .bd-15-orange { border: 1.5px solid var(--orange-br); }
+
+  /* before / vs / after 그리드 */
+  .grid-vs { display: grid; grid-template-columns: 1fr auto 1fr; }
+
+  /* inline-block */
+  .ib { display: inline-block; }
+
+  /* 직군 아이콘 (위임 4컷) */
+  .role-icon { color: var(--orange); flex-shrink: 0; }
+
+  /* 첫 진입 네비 힌트 토스트 */
+  .nav-hint {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(8px);
+    background: rgba(20, 18, 14, 0.92);
+    color: #f0ede6;
+    padding: 11px 22px;
+    border-radius: 99px;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    z-index: 10002;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    white-space: nowrap;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 6px 24px rgba(0,0,0,0.18);
+  }
+  .nav-hint.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  .nav-hint .nh-key {
+    background: rgba(255,255,255,0.18);
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-family: 'SF Mono', Menlo, monospace;
+    font-size: 12px;
+    margin: 0 2px;
+  }
+
+  /* JD 슬라이드 — 채용공고 스크린샷 교체용 슬롯 */
+  .jd-shot {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+  }
+
+  /* ── 챕터 간지 공통 — 라운지 채널 안내 ── */
+  .chapter-lounge {
+    position: absolute;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 18px;
+    border-radius: 99px;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    font-size: 13px;
+    color: var(--ink-dim);
+    z-index: 50;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .chapter-lounge .cl-icon {
+    width: 16px; height: 16px;
+    border-radius: 4px;
+    background: var(--orange);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+  .chapter-lounge .cl-strong {
+    color: var(--ink);
+    font-weight: 700;
+  }
+  .chapter-lounge .cl-link {
+    color: var(--orange);
+    font-weight: 700;
+    text-decoration: none;
+  }
+  .chapter-lounge .cl-link:hover {
+    text-decoration: underline;
+  }
+
+  /* 반응형 없음 — 1280×720 고정, JS로 scale만 조정 */
+</style>
+</head>
+<body>
+<div class="deck" id="deck" role="region" aria-label="프레젠테이션 슬라이드">
+<!-- 버전 표시 -->
+<div style="position:absolute; top:14px; right:20px; z-index:10001; font-size:11px; font-weight:700; letter-spacing:0.08em; color:var(--ink-dimmer); font-variant-numeric:tabular-nums; pointer-events:none;">v1.022</div>
+<!-- ══════════════════════════════════════════════
+  S01 — 표지
+══════════════════════════════════════════════ -->
+<div class="slide active ai-center" id="s01" style="padding-bottom:24px;">
+<svg class="w-full pos-abs inset-0 h-full pe-none" aria-hidden="true" preserveAspectRatio="xMidYMid slice" style="opacity:0.06;" viewBox="0 0 1200 700">
+<circle cx="980" cy="120" fill="none" r="340" stroke="#c96500" stroke-width="2"></circle>
+<circle cx="980" cy="120" fill="none" r="240" stroke="#c96500" stroke-width="1.5"></circle>
+<circle cx="980" cy="120" fill="none" r="140" stroke="#c96500" stroke-width="1"></circle>
+<circle cx="180" cy="600" fill="none" r="200" stroke="#c96500" stroke-width="1.5"></circle>
+<circle cx="180" cy="600" fill="none" r="100" stroke="#c96500" stroke-width="1"></circle>
+</svg>
+<div class="t-center pos-rel" style="max-width:900px;">
+<div class="eyebrow anim" style="letter-spacing:0.22em;">Claude Code로 시작하는</div>
+<h1 class="anim fs-hero-lg">AI로 일하는<br/><span class="highlight">IT 실무자의 다음 시대</span></h1>
+<p class="lead anim t-center fs-title" style="max-width:640px; margin:24px auto 0;">오늘은 <span class="em">Claude Code</span>부터 같이 시작해봐요.<br/>일하는 방식 자체를 바꿔보는 시간이에요.</p>
+<div class="anim row jc-center" style="margin-top:36px;"><span class="ai-center g-8 bg-warn fg-orange fs-body-sm fw-700 bd-orange" style="display:inline-flex; padding:8px 18px; border-radius:999px; letter-spacing:0.04em;"><svg class="flex-shrink-0" viewBox="0 0 18 13" width="26" height="19" aria-hidden="true" shape-rendering="crispEdges"><g fill="currentColor"><rect x="2" y="0" width="14" height="3"/><rect x="0" y="3" width="18" height="6"/><rect x="2" y="9" width="14" height="1"/><rect x="2" y="10" width="2" height="3"/><rect x="6" y="10" width="2" height="3"/><rect x="10" y="10" width="2" height="3"/><rect x="14" y="10" width="2" height="3"/></g><g fill="#1a1a1a"><rect x="4" y="4" width="2" height="2"/><rect x="12" y="4" width="2" height="2"/></g></svg>이지훈</span></div>
+</div>
+</div>
+
+
+<div class="slide p-0" id="s-signal">
+<svg class="w-full pos-abs inset-0 h-full pe-none" aria-hidden="true" preserveAspectRatio="xMidYMid slice" style="opacity:0.05;" viewBox="0 0 1200 700">
+<circle cx="200" cy="180" r="180" fill="none" stroke="#c96500" stroke-width="2"/>
+<circle cx="1000" cy="540" r="220" fill="none" stroke="#c96500" stroke-width="1.5"/>
+</svg>
+<div class="row stack ai-center jc-center pos-abs inset-0" style="padding:0 80px; gap:36px;">
+  <div class="t-center">
+    <div class="eyebrow anim">JD가 보내는 신호</div>
+    <h2 class="anim fs-display kw lh-12 mt-12">회사가 원하는 <span class="highlight">사람의 기준</span>이<br/>조용하지만, 빠르게 바뀌고 있어요</h2>
+  </div>
+  <div class="anim w-full" style="max-width:1060px;">
+    <div class="row ai-center jc-center g-14 flex-wrap">
+      <div class="bg-surface bd r-12 pad-20-24 t-center" style="min-width:260px;">
+        <div class="fs-tiny fw-700 ls-wide4 t-upper fg-dimmer mb-8">JD란</div>
+        <div class="fs-body fg-dim lh-16 kw">회사가 외부에 노출하는<br/><span class="fw-700 fg-ink">공식 인재상</span></div>
+      </div>
+      <div class="fs-title fg-orange fw-800">→</div>
+      <div class="bg-surface bd r-12 pad-20-24 t-center" style="min-width:260px;">
+        <div class="fs-tiny fw-700 ls-wide4 t-upper fg-dimmer mb-8">동시에</div>
+        <div class="fs-body fg-dim lh-16 kw"><span class="fw-700 fg-ink">내부 방향성</span>이<br/>밖으로 드러나는 창구</div>
+      </div>
+      <div class="fs-title fg-orange fw-800">→</div>
+      <div class="bg-warn bd-2-orange r-12 pad-20-24 t-center" style="min-width:260px;">
+        <div class="fs-tiny fw-700 ls-wide4 t-upper fg-orange mb-8">그 JD가</div>
+        <div class="fs-body fg-ink lh-16 kw fw-700">같은 방향을<br/>가리키기 시작했어요</div>
+      </div>
+    </div>
+  </div>
+  <p class="anim t-center fs-title-sm fg-dim lh-17 kw m-0-auto" style="max-width:760px;">한두 회사 얘기가 아니에요. 같이 일하는 동료들이 기대하는 <span class="em">기준 자체가 움직이고 있어요.</span></p>
+</div>
+</div>
+
+
+<!--
+  JD 카드 이미지 교체 가이드:
+  각 카드의 "<!- - IMG SLOT - ->" 자리에 다음을 끼워넣으세요:
+    <img class="jd-shot" src="jd-A.png" alt="A사 채용공고 캡처">
+  이미지를 넣어도 아래 텍스트는 그대로 fallback으로 남아 있어요.
+  필요 없으면 텍스트를 지우고 caption만 남겨도 됩니다.
+-->
+<div class="slide p-0" id="s-jd">
+<div class="row stack ai-center jc-center pos-abs inset-0 slide-pad t-center">
+<div class="eyebrow anim">실제 채용공고에서</div>
+<h2 class="anim fs-display kw lh-12 mt-10">AI 활용 능력이 <span class="highlight">우대를 넘어 필수</span>로</h2>
+<div class="anim grid grid-2 w-content mt-20" style="max-width:1000px; gap:16px;">
+<div class="card t-left">
+<div class="row ai-center jc-between">
+<div class="fs-tiny fw-700 ls-wide4 t-upper fg-dimmer">서비스 기획 · A사</div>
+<span class="badge b-soon" style="font-size:12px; padding:5px 12px;">우대</span>
+</div>
+<p class="fs-body fg-dim lh-16 kw mt-6 m-0">ChatGPT·Claude 등 <span class="fg-orange fw-700">생성형 AI 도구</span>를 업무에 능숙하게 활용한 경험</p>
+</div>
+<div class="card t-left">
+<div class="row ai-center jc-between">
+<div class="fs-tiny fw-700 ls-wide4 t-upper fg-dimmer">UX 디자이너 · B사</div>
+<span class="badge b-soon" style="font-size:12px; padding:5px 12px;">우대</span>
+</div>
+<p class="fs-body fg-dim lh-16 kw mt-6 m-0">AI 기반 디자인 워크플로우 활용 경험 (Figma AI, Midjourney 등)</p>
+</div>
+<div class="card t-left">
+<div class="row ai-center jc-between">
+<div class="fs-tiny fw-700 ls-wide4 t-upper fg-dimmer">콘텐츠 마케터 · C사</div>
+<span class="badge b-soon" style="font-size:12px; padding:5px 12px;">우대</span>
+</div>
+<p class="fs-body fg-dim lh-16 kw mt-6 m-0">AI 활용한 카피·콘텐츠 생산 효율화 경험 보유자</p>
+</div>
+<div class="card bg-warn bd-2-orange t-left">
+<div class="row ai-center jc-between">
+<div class="fs-tiny fw-700 ls-wide4 t-upper fg-orange">데이터 분석 · D사</div>
+<span class="badge b-must" style="font-size:12px; padding:5px 12px;">필수</span>
+</div>
+<p class="fs-body fg-ink lh-16 kw mt-6 m-0"><span class="fg-orange fw-700">AI 활용 분석 자동화 경험 필수.</span> 반복 쿼리·리포트를 LLM으로 자동화한 경험</p>
+</div>
+</div>
+</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+  S-HARD — 솔직한 고백: 어려운 게 맞아요
+══════════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════
+  S05
+══════════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════
+  S06 — 재프레이밍: 직접 만들기에서 위임·판단으로
+══════════════════════════════════════════════ -->
+<div class="slide" data-script="ai를 툴이 아니라 어떠한 스킬적인 부분, 뭔가 개념적인 사고처럼 바라봐야 해요. 디자인 관점이나 사고체계 이런 것처럼요. 이렇게 보면 오늘 제가 하는 말이 더 잘 와닿을 거예요." id="s-hard-reframe" style="padding:0;">
+<svg aria-hidden="true" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:0.05;" viewBox="0 0 1200 700">
+<circle cx="600" cy="350" fill="none" r="300" stroke="#c96500" stroke-width="2"></circle>
+<circle cx="600" cy="350" fill="none" r="180" stroke="#c96500" stroke-width="1.5"></circle>
+</svg>
+<div style="position:absolute;inset:0;display:flex;align-items:stretch;justify-content:center;padding:0 80px;">
+<div style="max-width:960px;width:100%;text-align:center;position:relative;display:flex;flex-direction:column;justify-content:center;padding:32px 0;gap:14px;">
+<div>
+<div class="eyebrow anim">일하는 방식은 이렇게 바뀌어요</div>
+<h2 class="anim" style="font-size:clamp(34px,48px,52px);line-height:1.26;margin-top:10px;">
+  <span class="highlight">직접 만들기</span>에서 <span class="highlight">위임·판단</span>으로
+</h2>
+</div>
+<div class="anim" style="display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:stretch;">
+<!-- AsIs -->
+<div style="padding:28px 32px;border-radius:16px;background:var(--surface2);border:1px solid var(--border);display:flex;flex-direction:column;justify-content:center;gap:12px;">
+<div style="font-size:12px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink-dimmer);">AsIs · 지금까지</div>
+<div style="display:flex;flex-direction:column;gap:6px;text-align:left;">
+<div style="font-size:clamp(17px,20px,21px);font-weight:700;color:var(--ink);">내가 다 만들어요</div>
+<div style="font-size:clamp(14px,16px,17px);color:var(--ink-dimmer);line-height:1.6;">문서·와이어·POC까지 내 손을 거쳐야 결과가 나와요</div>
+<div style="font-size:clamp(17px,20px,21px);font-weight:700;color:var(--ink);margin-top:6px;">실행이 일의 중심</div>
+<div style="font-size:clamp(14px,16px,17px);color:var(--ink-dimmer);line-height:1.6;">"어떻게" 만들 건가에 시간이 가장 많이 들어요</div>
+</div>
+</div>
+<!-- Arrow -->
+<div style="font-size:28px;font-weight:900;color:var(--orange);display:flex;align-items:center;justify-content:center;">→</div>
+<!-- ToBe -->
+<div style="padding:28px 32px;border-radius:16px;background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--orange);display:flex;flex-direction:column;justify-content:center;gap:12px;">
+<div style="font-size:12px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--orange);">ToBe · 앞으로</div>
+<div style="display:flex;flex-direction:column;gap:6px;text-align:left;">
+<div style="font-size:clamp(17px,20px,21px);font-weight:700;color:var(--ink);">AI에 <span style="color:var(--orange);">위임</span>하고 내가 검증해요</div>
+<div style="font-size:clamp(14px,16px,17px);color:var(--ink-dim);line-height:1.6;">실행은 AI가, 맥락 설계·판단은 내가</div>
+<div style="font-size:clamp(17px,20px,21px);font-weight:700;color:var(--orange);margin-top:6px;">판단이 일의 중심</div>
+<div style="font-size:clamp(14px,16px,17px);color:var(--ink-dim);line-height:1.6;">"왜·언제·뭘"에 집중할 여유가 생겨요</div>
+</div>
+</div>
+</div>
+<div class="key-line anim" style="font-size:clamp(18px,22px,24px);text-align:center;padding:14px 24px;">실행에서 손을 떼고, <span style="color:var(--orange);">판단과 검증</span>에 시간을 쓰는 방식이에요.</div>
+</div>
+</div>
+</div>
+<div class="slide" data-script="피그마같은 도구는 사람이 엄청 똑똑하면 금방 배울수 있지 않을까? 라는 생각을 할 수 있거든요. 근데 ai는 달라요. 사고방식 자체가 바뀌어야 해요. 그냥 툴처럼 쓰면 원하는 결과가 안 나와요. 이게 피그마 같은 단순 도구랑 다른 이유예요." id="s-hard" style="padding:0;">
+<div style="position:absolute;inset:0;display:flex;align-items:stretch;justify-content:center;padding:0 80px;">
+<div style="max-width:1100px;width:100%;display:flex;flex-direction:column;justify-content:center;padding:28px 0;gap:16px;">
+<div style="text-align:center;">
+<div class="eyebrow anim">그래서 왜 어려울까</div>
+<h2 class="anim" style="font-size:clamp(34px,48px,52px);text-align:center;margin-top:10px;">
+          사용법을 넘어서, <span class="highlight">일하는 방식 자체</span>를 바꿔야 해요
+        </h2>
+</div>
+<div class="vs-wrap anim" style="align-items:stretch;gap:16px;">
+<div style="display:flex;flex-direction:column;">
+<div class="vs-label" style="color:var(--ink-dimmer);">기존 도구 (피그마·포토샵)</div>
+<div class="card" style="flex:1;padding:28px 32px;">
+<div class="card-title" style="font-size:clamp(16px,20px,20px);">사용법만 익히면 돼요</div>
+<p style="color:var(--ink-dim);font-size:clamp(15px,17px,18px);line-height:1.6;margin-top:8px;margin-bottom:12px;">단축키·메뉴 익히면 바로 결과물이 나와요.<br/>일하는 방식은 그대로 둬도 돼요.</p>
+<div style="display:flex;flex-wrap:wrap;gap:6px;">
+<span style="font-size:15px;padding:6px 14px;border-radius:6px;background:var(--surface2);border:1px solid var(--border);color:var(--ink-dim);">도구 학습만 필요</span>
+</div>
+</div>
+</div>
+<div class="vs-divider anim" style="align-self:center;width:56px;height:56px;font-size:15px;">VS</div>
+<div style="display:flex;flex-direction:column;">
+<div class="vs-label" style="color:var(--orange);font-weight:700;">AI 활용 (사용법 + 사고방식)</div>
+<div class="card" style="flex:1;background:var(--surface);border-color:var(--border);border-left:4px solid var(--orange);padding:28px 32px;">
+<div class="card-title" style="color:var(--orange);font-size:clamp(16px,20px,20px);">사용법 + 일하는 방식을 바꿔야 해요</div>
+<p style="color:var(--ink-dim);font-size:clamp(15px,17px,18px);line-height:1.6;margin-top:8px;margin-bottom:12px;">도구 사용법도 익혀야 하고, 일하는 방식 자체가 바뀌어야 해요.<br/>그래서 초반 허들이 커요.</p>
+<div style="display:flex;flex-wrap:wrap;gap:6px;">
+<span style="font-size:15px;padding:6px 14px;border-radius:6px;background:var(--orange-bg);border:1px solid var(--orange-br);color:var(--orange);font-weight:600;">도구 + 사고방식 전환</span>
+</div>
+</div>
+</div>
+</div>
+<div class="key-line anim" style="text-align:center;font-size:clamp(17px,20px,22px);padding:16px 28px;">
+        그래서 초반엔 기존 방식보다 느려요. <span style="color:var(--orange);">이 허들이 시작의 가장 큰 벽</span>이에요.
+</div>
+</div>
+</div>
+</div>
+<!-- ══════════════════════════════════════════════
+  S08
+══════════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════
+  S09
+══════════════════════════════════════════════ -->
+<div class="slide" id="s09" style="padding:0;">
+<svg aria-hidden="true" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:0.05;" viewBox="0 0 1200 700">
+<circle cx="100" cy="600" fill="none" r="250" stroke="#c96500" stroke-width="2"></circle>
+<circle cx="1100" cy="100" fill="none" r="200" stroke="#c96500" stroke-width="1.5"></circle>
+</svg>
+<div style="position:absolute;inset:0;display:flex;align-items:stretch;justify-content:center;padding:0 80px;">
+<div style="max-width:900px;width:100%;text-align:center;position:relative;display:flex;flex-direction:column;justify-content:center;padding:28px 0;gap:12px;">
+<div>
+<div class="eyebrow anim">AI가 바꾸는 것</div>
+<h2 class="anim" style="font-size:clamp(40px,58px,62px);line-height:1.2;margin-top:8px;">
+<span class="highlight">역할의 변화</span>
+</h2>
+</div>
+<p class="lead anim" style="text-align:center;font-size:clamp(18px,22px,24px);max-width:640px;margin:0 auto;line-height:1.8;">
+앞으로는 <span class="em">"어떻게"</span>가 아니라<br/>
+<span class="em">"왜, 언제, 뭘"</span>에 집중하게 될 거예요.
+</p>
+<div class="anim" style="border-radius:20px;background:var(--surface);border:1px solid var(--border);padding:28px 36px;">
+<div style="display:grid;grid-template-columns:1fr 56px 1fr;align-items:center;gap:0;">
+<div style="text-align:center;padding:16px 20px;border-radius:14px;background:var(--surface2);border:1px solid var(--border);opacity:0.55;">
+<div style="font-size:clamp(22px,32px,36px);font-weight:800;color:var(--ink-dimmer);margin-bottom:8px;text-decoration:line-through;text-decoration-color:var(--ink-dimmer);">어떻게</div>
+<div style="font-size:clamp(14px,16px,17px);color:var(--ink-dimmer);line-height:1.6;">AI가 대신해줘요</div>
+</div>
+<div style="text-align:center;font-size:24px;color:var(--orange);font-weight:700;">→</div>
+<div style="text-align:center;padding:16px 20px;border-radius:14px;background:var(--orange-bg);border:2px solid var(--orange-br);">
+<div style="font-size:clamp(22px,32px,36px);font-weight:800;color:var(--orange);margin-bottom:8px;">왜 · 언제 · 뭘</div>
+<div style="font-size:clamp(14px,16px,17px);color:var(--ink-dim);line-height:1.6;">여러분의 판단 영역</div>
+</div>
+</div>
+</div>
+<div class="anim" style="padding:10px 20px;border-radius:12px;background:var(--surface);border:1px solid var(--border2);font-size:clamp(14px,16px,17px);color:var(--ink-dimmer);line-height:1.7;text-align:center;">
+의외로 앞으로는 <span class="em">창의력</span>이 중요할 거예요. 도구는 모두의 손에 있는데, <span class="em">그걸로 뭘 하냐</span>가 핵심이거든요.
+</div>
+</div>
+</div>
+</div>
+<!-- ══════════════════════════════════════════════
+  S-EXPERTISE
+══════════════════════════════════════════════ -->
+<div class="slide p-0" id="s-expertise">
+<svg class="w-full pos-abs inset-0 h-full pe-none" aria-hidden="true" preserveAspectRatio="xMidYMid slice" style="opacity:0.05;" viewBox="0 0 1200 700">
+<circle cx="600" cy="350" r="320" fill="none" stroke="#c96500" stroke-width="2" stroke-dasharray="8 6"/>
+<circle cx="600" cy="350" r="180" fill="none" stroke="#c96500" stroke-width="1.5"/>
+</svg>
+<div class="row stack ai-center jc-center pos-abs inset-0" style="padding:0 80px; gap:20px; justify-content:center;">
+<div class="t-center">
+<div class="eyebrow anim">그럼 직무 상관이 없어지나요?</div>
+<h2 class="anim kw lh-12" style="font-size:clamp(36px,56px,62px); margin-top:10px;"><span class="highlight">직무만의 전문성</span>이 더 중요해져요</h2>
+<p class="anim" style="font-size:clamp(14px,16px,17px);color:var(--ink-dim);line-height:1.8;margin:10px auto 0;max-width:700px;">
+  프디인 제가 바이브코딩을 하더라도, <span class="em">보안·디버깅·확장성</span> 고려까지는 현실적으로 불가해요.<br/>
+  그렇기에 업무의 벽이 허물어지더라도 <span style="color:var(--orange);font-weight:700;">전문성은 더 중요해질거예요.</span>
+</p>
+</div>
+<div class="anim w-full" style="max-width:1060px; margin:0 auto;">
+<div class="grid g-12" style="grid-template-columns:repeat(5,1fr);">
+<div class="card t-center row stack g-8 ai-center" style="padding:20px 16px;">
+<div class="fs-caption fw-700 fg-dimmer ls-wide4 t-upper" style="letter-spacing:0.12em;">개발</div>
+<div class="fs-body fw-700 fg-ink kw lh-14">보안·디버깅·<br/>확장성 적용</div>
+</div>
+<div class="card t-center row stack g-8 ai-center" style="padding:20px 16px;">
+<div class="fs-caption fw-700 fg-dimmer ls-wide4 t-upper" style="letter-spacing:0.12em;">사업개발</div>
+<div class="fs-body fw-700 fg-ink kw lh-14">실제 고객<br/>인터뷰 관점</div>
+</div>
+<div class="card t-center row stack g-8 ai-center" style="padding:20px 16px;">
+<div class="fs-caption fw-700 fg-dimmer ls-wide4 t-upper" style="letter-spacing:0.12em;">프로덕트 디자인</div>
+<div class="fs-body fw-700 fg-ink kw lh-14">사용자 경험을<br/>가르는 눈</div>
+</div>
+<div class="card t-center row stack g-8 ai-center" style="padding:20px 16px;">
+<div class="fs-caption fw-700 fg-dimmer ls-wide4 t-upper" style="letter-spacing:0.12em;">PM</div>
+<div class="fs-body fw-700 fg-ink kw lh-14">관리·정렬·<br/>우선순위</div>
+</div>
+<div class="card t-center row stack g-8 ai-center" style="padding:20px 16px;">
+<div class="fs-caption fw-700 fg-dimmer ls-wide4 t-upper" style="letter-spacing:0.12em;">QA</div>
+<div class="fs-body fw-700 fg-ink kw lh-14">꼼꼼한 검증<br/>태스크 관리</div>
+</div>
+</div>
+</div>
+<div class="anim key-line t-center" style="max-width:1060px; margin:0 auto; width:100%;">
+AI가 실행을 맡으면, 판단의 질이 곧 결과물의 질이에요.
+</div>
+</div>
+</div>
+<!-- ══════════════════════════════════════════════
+  S10
+══════════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════
+  S11
+══════════════════════════════════════════════ -->
+<div class="slide" id="s11" style="padding:0;">
+<svg aria-hidden="true" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:0.06;" viewBox="0 0 1200 700">
+<circle cx="200" cy="600" fill="none" r="280" stroke="#c96500" stroke-width="2"></circle>
+<circle cx="1000" cy="100" fill="none" r="240" stroke="#c96500" stroke-dasharray="10 7" stroke-width="1.5"></circle>
+</svg>
+<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:20px;">
+<div class="eyebrow anim">이제 직접 보여드릴게요</div>
+<h2 class="anim" style="font-size:clamp(44px,79px,88px);line-height:1.0;letter-spacing:-0.04em;">AI <span class="highlight">워크플로우</span></h2>
+<div class="anim" style="width:64px;height:2px;background:var(--border2);border-radius:99px;"></div>
+<p class="lead anim" style="text-align:center;font-size:clamp(21px,28px,30px);max-width:600px;margin:0 auto;line-height:2.0;">
+맥락 부여부터 운영까지,<br/>
+<span class="em">AI가 어디에 붙어있는지</span>,<br/><span class="em">판단이 언제 개입하는지</span> 보세요.
+</p>
+</div>
+<div class="chapter-lounge"><span class="cl-icon">#</span>막힐 때는 슬랙 <a class="cl-link" href="https://miridih.slack.com/archives/C0AUZDBKGLW" target="_blank">ax_라운지</a> 채널에 편하게 물어보세요</div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+  BEG-2 (이동) — 왜 Claude Code인가 (3-col 비교)
+══════════════════════════════════════════════ -->
+<div class="slide w-full row stack h-full ov-hidden" id="s-why-cc" style="padding: 36px 40px; gap: 20px; justify-content:center;">
+
+  <!-- 헤더 -->
+  <div class="t-center">
+    <div class="fs-body-sm fw-700 fg-orange mb-4 t-upper ls-wide5">시작 전</div>
+    <h2 class="fw-800 fg-ink kw m-0 ls-tight2" style="font-size:clamp(28px,36px,40px);">왜 Claude Code인가요?</h2>
+  </div>
+
+  <!-- 3-column 비교 카드 + key-line (동일 그리드 2행) -->
+  <div class="ai-center grid grid-vs" style="gap:16px 16px; align-items:stretch;">
+
+    <!-- GPT 웹 (row 1, col 1) -->
+    <div class="bg-surface2 row stack g-12 bd r-16" style="padding:28px 32px;">
+      <div class="fw-800 fg-ink ls-tight2 fs-title">GPT 웹</div>
+      <div class="fs-body fw-600 fg-dim r-20 ib" style="background:#e8e5de; padding:3px 12px; width:fit-content;">대화만</div>
+      <ul class="row stack g-8 m-0 pl-18">
+        <li class="fs-lead fg-dim kw">답을 알려줌</li>
+        <li class="fs-lead fg-dim kw">내가 직접 실행해야 함</li>
+        <li class="fs-lead fg-dim kw">복붙 반복 필요</li>
+      </ul>
+      <div class="fg-dim kw r-10 fs-body italic mt-auto" style="background:#f0f0ee; padding:10px 14px;">"이렇게 하면 돼요~" 조언 친구</div>
+    </div>
+
+    <!-- 중앙 VS (row 1, col 2) -->
+    <div class="row ai-center jc-center" style="padding:0 10px;">
+      <div class="row ai-center jc-center fs-body-sm fw-800 fg-white r-full bg-orange ls-tight2" style="width:38px; height:38px;">VS</div>
+    </div>
+
+    <!-- Claude Code (row 1, col 3) -->
+    <div class="bg-warn row stack g-12 r-16 pos-rel bd-2-orange" style="padding:28px 32px;">
+      <div class="fg-white fs-body-sm fw-700 pos-abs bg-orange ls-wide1 pad-3-10" style="top:-1px; right:16px; border-radius:0 0 8px 8px;">추천</div>
+      <div class="fw-800 fg-ink ls-tight2 fs-title">Claude Code</div>
+      <div class="fs-body fw-600 fg-white bg-orange r-20 ib" style="padding:3px 12px; width:fit-content;">직접 실행</div>
+      <ul class="row stack g-8 m-0 pl-18">
+        <li class="fs-lead fg-ink kw fw-500">파일을 직접 만들고 수정</li>
+        <li class="fs-lead fg-ink kw fw-500">코드를 직접 실행</li>
+        <li class="fs-lead fg-ink kw fw-500">결과를 바로 확인</li>
+      </ul>
+      <div class="fg-orange kw fw-600 r-10 fs-body italic mt-auto" style="background:rgba(201,101,0,0.1); padding:10px 14px;">"나 대신 실행까지 해 줄 수 있어요."</div>
+    </div>
+
+    <!-- key-line (row 2, col 1~3 전체) -->
+    <div class="key-line t-center fs-body fw-700 kw r-12" style="padding:12px 24px; grid-column:1 / -1;">나 대신 실행까지 해 줄 수 있어요.</div>
+
+  </div>
+
+</div>
+
+
+
+
+<div class="slide" id="s17" style="padding:0;">
+<div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding:44px 80px;gap:28px;">
+<div>
+<div class="eyebrow anim">실제 워크플로우</div>
+<h2 class="anim" style="font-size:clamp(28px,46px,52px);margin-top:8px;">이게 <span class="highlight">제 실제 워크플로우</span>예요</h2>
+</div>
+<div class="flow anim" style="justify-content:flex-start;gap:8px;">
+<div class="fi on" style="font-size:clamp(15px,19px,19px);padding:10px 18px;">맥락 부여</div>
+<div class="fa">›</div>
+<div class="fi on" style="font-size:clamp(15px,19px,19px);padding:10px 18px;">상위 기획</div>
+<div class="fa">›</div>
+<div class="fi on" style="font-size:clamp(15px,19px,19px);padding:10px 18px;">세부 기획</div>
+<div class="fa">›</div>
+<div class="fi on" style="font-size:clamp(15px,19px,19px);padding:10px 18px;">세부 설계</div>
+<div class="fa">›</div>
+<div class="fi on" style="font-size:clamp(15px,19px,19px);padding:10px 18px;">시각적 완성도 고도화 및 정리</div>
+<div class="fa">›</div>
+<div class="fi on" style="font-size:clamp(15px,19px,19px);padding:10px 18px;">리뷰·전달</div>
+<div class="fa">›</div>
+<div class="fi on" style="font-size:clamp(15px,19px,19px);padding:10px 18px;">수렴</div>
+<div class="fa">›</div>
+<div class="fi on" style="font-size:clamp(15px,19px,19px);padding:10px 18px;">운영</div>
+</div>
+<div class="demo-row anim" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+<div class="card" style="border-left:4px solid var(--orange);">
+<div class="card-title" style="color:var(--orange);">처음부터 끝까지</div>
+<p>아이디어 단계부터 Confluence 업로드, QA까지 AI가 끊기지 않고 연결돼요. 중간에 수동 작업이 없어요.</p>
+</div>
+<div class="card" style="border-left:4px solid var(--orange);">
+<div class="card-title" style="color:var(--orange);">내가 하는 것</div>
+<p>방향 잡기, 피드백, 최종 결정. 실행에 쓰던 시간이 판단으로 바뀌어요. <span class="em">다음 슬라이드부터 하나씩 열게요.</span></p>
+</div>
+</div>
+<div class="demo-row anim" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+<div class="card" style="background:var(--surface2);">
+<div class="card-title">달라진 것</div>
+<p>예전엔 기획서 한 장 쓰는 데 몇 시간이었어요. 지금은 방향 잡기 30분, 초안 받고 다듬기 30분.</p>
+</div>
+<div class="card" style="background:var(--surface2);">
+<div class="card-title">이 흐름이 가능한 이유</div>
+<p>각 단계가 맥락을 이어받아요. 상위 기획 → 세부 설계 → 코드 → 문서로 자연스럽게 흘러가요.</p>
+</div>
+</div>
+</div>
+</div>
+
+
+<div class="slide wf-slide" id="s18">
+<h2 class="anim fs-display fw-800 mb-20 ls-tight3">맥락을 주고, <span class="highlight">상위 기획</span>을 함께 짜요</h2>
+<div class="flow anim mb-16 fs-body">
+<span class="fi on">맥락 부여</span><span class="fa">›</span><span class="fi on">상위 기획</span><span class="fa">›</span><span class="fi">세부 기획</span><span class="fa">›</span><span class="fi">세부 설계</span><span class="fa">›</span><span class="fi">시각적 완성도 고도화 및 정리</span><span class="fa">›</span><span class="fi">리뷰·전달</span><span class="fa">›</span><span class="fi">수렴</span><span class="fa">›</span><span class="fi">운영</span>
+</div>
+<div class="wf-row">
+<div class="card anim">
+<div class="card-title">맥락 부여</div>
+<h3>지금까지 있었던 모든 걸 AI에게 줘요</h3>
+<p class="kw">히스토리·데이터·결정 배경을 한 번에. <span class="em">오래 담당하며 생긴 선입견을 AI가 걷어줘요.</span></p>
+<div class="wf-chips">
+<span class="wf-chip">히스토리 전달</span><span class="wf-chip">데이터 인풋</span><span class="wf-chip">결정 배경</span><span class="wf-chip hi">편향 없는 정리</span>
+</div>
+</div>
+<div class="card anim">
+<div class="card-title">상위 기획</div>
+<h3>로드맵부터 경쟁사 리서치까지 AI와 함께</h3>
+<p class="kw">VOC·경쟁사·트렌드 수집은 AI 몫. <span class="em">사람은 우선순위만 판단해요.</span></p>
+<div class="wf-chips">
+<span class="wf-chip">로드맵 우선순위</span><span class="wf-chip">VOC 분석</span><span class="wf-chip">경쟁사 리서치</span><span class="wf-chip hi">트렌드 수집 자동화</span>
+</div>
+</div>
+</div>
+<div class="wf-demo-label anim">예시</div>
+<div class="wf-demo-row anim">
+<a href="https://miridih.atlassian.net/wiki/x/1oVwjw" class="wf-demo-link" target="_blank" rel="noopener noreferrer"><svg class="wf-demo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg><span class="wf-demo-text">시장 리서치</span></a>
+<a href="https://miridih.atlassian.net/wiki/spaces/AIP/pages/2356348141/AIP+PRD+L3" class="wf-demo-link" target="_blank" rel="noopener noreferrer"><svg class="wf-demo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg><span class="wf-demo-text">데이터 및 가설</span></a>
+</div>
+</div>
+
+
+<div class="slide wf-slide" id="s19">
+<h2 class="anim fs-display fw-800 mb-20 ls-tight3"><span class="highlight">세부 기획·설계</span>는 AI와 핑퐁으로</h2>
+<div class="flow anim mb-16 fs-body">
+<span class="fi">맥락 부여</span><span class="fa">›</span><span class="fi">상위 기획</span><span class="fa">›</span><span class="fi on">세부 기획</span><span class="fa">›</span><span class="fi on">세부 설계</span><span class="fa">›</span><span class="fi">시각적 완성도 고도화 및 정리</span><span class="fa">›</span><span class="fi">리뷰·전달</span><span class="fa">›</span><span class="fi">수렴</span><span class="fa">›</span><span class="fi">운영</span>
+</div>
+<div class="wf-row">
+<div class="card anim">
+<div class="card-title">세부 기획</div>
+<h3>기획 초안과 POC를 AI가 먼저 잡아줘요</h3>
+<p class="kw">빈 문서 앞 막막한 시간이 사라져요. <span class="em">베이스(Figma·레퍼런스·이미지)만 주면 Claude Code가 이어받아요.</span></p>
+<div class="wf-chips">
+<span class="wf-chip">Figma 자산</span><span class="wf-chip">레퍼런스</span><span class="wf-chip">맨땅·이미지</span><span class="wf-chip hi">베이스만 있으면 OK</span>
+</div>
+</div>
+<div class="card anim">
+<div class="card-title">세부 설계</div>
+<h3>AI 제안으로 사고를 넓히고 빠르게 결정해요</h3>
+<p class="kw">AI가 보편적 추천을 먼저 던져 사고가 넓어져요. <span class="em">프로덕트 맥락 판단은 사람 몫.</span></p>
+<div class="wf-chips">
+<span class="wf-chip">AI 추천·제안</span><span class="wf-chip">사고 확장</span><span class="wf-chip">빠른 결정</span><span class="wf-chip hi">최종 판단은 사람</span>
+</div>
+</div>
+</div>
+<div class="wf-demo-label anim">예시</div>
+<div class="wf-demo-row anim">
+<a href="https://miridih.atlassian.net/wiki/spaces/AIP/pages/2414969262/AIP" class="wf-demo-link" target="_blank" rel="noopener noreferrer"><svg class="wf-demo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg><span class="wf-demo-text">기획 초안(얼마나 뾰족하지 않은지 확인)</span></a>
+<a href="https://aip-component-aip-editor-return-v5.vercel.app/" class="wf-demo-link" target="_blank" rel="noopener noreferrer"><svg class="wf-demo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg><span class="wf-demo-text">초안의 낮은 퀄리티 확인</span></a>
+</div>
+</div>
+
+
+<div class="slide wf-slide" id="s19b">
+<h2 class="anim fs-display fw-800 mb-20 ls-tight3"><span class="highlight">시각적 완성도</span>를 고도화하고 정리해요</h2>
+<div class="flow anim mb-16 fs-body">
+<span class="fi">맥락 부여</span><span class="fa">›</span><span class="fi">상위 기획</span><span class="fa">›</span><span class="fi">세부 기획</span><span class="fa">›</span><span class="fi">세부 설계</span><span class="fa">›</span><span class="fi on">시각적 완성도 고도화 및 정리</span><span class="fa">›</span><span class="fi">리뷰·전달</span><span class="fa">›</span><span class="fi">수렴</span><span class="fa">›</span><span class="fi">운영</span>
+</div>
+<div class="wf-row">
+<div class="card anim">
+<div class="card-title">UI 고도화</div>
+<h3>POC의 UI를 실제 프로덕트 수준까지 끌어올려요</h3>
+<p class="kw">POC 화면을 프로덕트 수준으로. <span class="em">레이아웃·여백·타이포·컬러 디테일까지 잡아요.</span></p>
+<div class="wf-chips">
+<span class="wf-chip">프로덕트 수준 UI</span><span class="wf-chip">디테일 다듬기</span><span class="wf-chip hi">즉시 수정 가능</span>
+</div>
+</div>
+<div class="card anim">
+<div class="card-title">그래픽·인터랙션</div>
+<h3>원하는 그래픽과 인터랙션을 시각화해요</h3>
+<p class="kw">머릿속 움직임을 코드로 시각화. <span class="em">말로 설명하기 어려운 인터랙션도 바로 보여줘요.</span></p>
+<div class="wf-chips">
+<span class="wf-chip">인터랙션 시각화</span><span class="wf-chip">그래픽 구현</span><span class="wf-chip hi">코드 기반 수정</span>
+</div>
+</div>
+</div>
+<div class="wf-demo-label anim">예시</div>
+<div class="wf-demo-row anim">
+<a href="https://miridih.atlassian.net/wiki/x/bARmjg" class="wf-demo-link" target="_blank" rel="noopener noreferrer"><svg class="wf-demo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg><span class="wf-demo-text">UI 튜토리얼</span></a>
+<a href="https://aip-diagnostic-funnel.vercel.app/" class="wf-demo-link" target="_blank" rel="noopener noreferrer"><svg class="wf-demo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg><span class="wf-demo-text">역질문 퍼널</span></a>
+<a href="https://aip-storyline-loading.vercel.app/" class="wf-demo-link" target="_blank" rel="noopener noreferrer"><svg class="wf-demo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg><span class="wf-demo-text">스토리라인 로딩</span></a>
+<a href="https://aip-loading-graphic-one.vercel.app/" class="wf-demo-link" target="_blank" rel="noopener noreferrer"><svg class="wf-demo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg><span class="wf-demo-text">최종 생성 로딩 그래픽</span></a>
+</div>
+</div>
+
+
+<div class="slide wf-slide" id="s20">
+<h2 class="anim fs-display fw-800 mb-20 ls-tight3"><span class="highlight">리뷰·전달 → 수렴</span>까지 AI가 이어받아요</h2>
+<div class="flow anim mb-16 fs-body">
+<span class="fi">맥락 부여</span><span class="fa">›</span><span class="fi">상위 기획</span><span class="fa">›</span><span class="fi">세부 기획</span><span class="fa">›</span><span class="fi">세부 설계</span><span class="fa">›</span><span class="fi">시각적 완성도 고도화 및 정리</span><span class="fa">›</span><span class="fi on">리뷰·전달</span><span class="fa">›</span><span class="fi on">수렴</span><span class="fa">›</span><span class="fi">운영</span>
+</div>
+<div class="wf-row">
+<div class="card anim">
+<div class="card-title">최종 정책 수렴</div>
+<h3>리뷰 피드백을 모아 최종 정책으로 정리해요</h3>
+<p class="kw">리뷰 피드백 → 최종 스펙·정책 문서로. <span class="em">흩어진 결정·예외 케이스를 한 곳에 모아요.</span></p>
+<div class="wf-chips">
+<span class="wf-chip hi">피드백 수렴</span><span class="wf-chip">최종 스펙 확정</span><span class="wf-chip">예외 케이스 정리</span>
+</div>
+</div>
+<div class="card anim">
+<div class="card-title">Claude Code가 Confluence 작성</div>
+<h3 class="kw fs-title">Claude Code가 Confluence에 직접 업로드해요</h3>
+<p class="kw">자연어 한 줄이면 Confluence 페이지가 만들어져요. <span class="em">에이전트 여러 개 동시에 돌려 QA 루프까지.</span></p>
+<div class="wf-chips">
+<span class="wf-chip">명세서 작성</span><span class="wf-chip hi">Confluence 직접 업로드</span><span class="wf-chip">멀티 에이전트 QA 루프</span>
+</div>
+</div>
+</div>
+<div class="anim mt-12 fs-body fg-dimmer t-center">※ Description은 자산화를 위해 수기로 Figma에 업데이트하고 있어요.</div>
+<div class="wf-demo-label anim">예시</div>
+<div class="wf-demo-row anim">
+<a href="https://miridih.atlassian.net/wiki/spaces/AIP/pages/2406680056/Chat+AIP" class="wf-demo-link" target="_blank" rel="noopener noreferrer"><svg class="wf-demo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg><span class="wf-demo-text">최종 스펙 정책 1</span></a>
+<a href="https://miridih.atlassian.net/wiki/spaces/AIP/pages/2429616195/Chat+AIP" class="wf-demo-link" target="_blank" rel="noopener noreferrer"><svg class="wf-demo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg><span class="wf-demo-text">최종 스펙 정책 2</span></a>
+<a href="https://aip-mockup-viewer.vercel.app" class="wf-demo-link" target="_blank" rel="noopener noreferrer"><svg class="wf-demo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg><span class="wf-demo-text">빠른 QA·소통용 목업 프레이밍</span></a>
+</div>
+</div>
+
+
+<div class="slide wf-slide" id="s21">
+<h2 class="anim fs-display fw-800 mb-20 ls-tight3"><span class="highlight">운영</span>은 AI가 모니터링·알림까지</h2>
+<div class="flow anim mb-16 fs-body">
+<span class="fi">맥락 부여</span><span class="fa">›</span><span class="fi">상위 기획</span><span class="fa">›</span><span class="fi">세부 기획</span><span class="fa">›</span><span class="fi">세부 설계</span><span class="fa">›</span><span class="fi">시각적 완성도 고도화 및 정리</span><span class="fa">›</span><span class="fi">리뷰·전달</span><span class="fa">›</span><span class="fi">수렴</span><span class="fa">›</span><span class="fi on">운영</span>
+</div>
+<div class="wf-row">
+<div class="card anim">
+<div class="card-title">단순작업 규칙화</div>
+<h3>AI를 활용해서 단순작업을 규칙으로 만들기</h3>
+<p class="kw">단순작업을 AI 규칙으로. <span class="em">기준만 잡아주면 같은 품질로 반복 실행돼요.</span></p>
+<div class="wf-chips">
+<span class="wf-chip">AI 규칙 정의</span><span class="wf-chip">일관된 품질</span><span class="wf-chip hi">사람 판단 최소화</span>
+</div>
+</div>
+<div class="card anim">
+<div class="card-title">반복작업 파이프라인화</div>
+<h3>반복 작업을 파이프라인으로 대체해요</h3>
+<p class="kw">VOC·경쟁사·CSV를 파이프라인으로. <span class="em">한 번 만들면 다시는 손 안 대요.</span></p>
+<div class="wf-chips">
+<span class="wf-chip hi">주기적 자동 실행</span><span class="wf-chip">Confluence 자동 업로드</span><span class="wf-chip">손 안 대는 운영</span>
+</div>
+</div>
+</div>
+<div class="wf-demo-label anim">예시</div>
+<div class="wf-demo-row anim">
+<a href="https://miridih.atlassian.net/wiki/spaces/AIP/pages/2462286524/Component+AIP" class="wf-demo-link" target="_blank" rel="noopener noreferrer"><svg class="wf-demo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg><span class="wf-demo-text">템플릿 컬러 배정</span></a>
+<a href="https://miridih.atlassian.net/wiki/x/uQEUiw" class="wf-demo-link" target="_blank" rel="noopener noreferrer"><svg class="wf-demo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg><span class="wf-demo-text">주기적인 웹 리서치</span></a>
+</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+  S-EXPERTISE — 전문성은 오히려 더 중요해진다 (반전 카드)
+══════════════════════════════════════════════ -->
+
+<div class="slide p-0 ai-center" id="beg-0">
+  <svg class="w-full pos-abs inset-0 h-full pe-none" aria-hidden="true" preserveAspectRatio="xMidYMid slice" style="opacity:0.12;" viewBox="0 0 1200 700">
+    <circle cx="600" cy="350" fill="none" r="320" stroke="#c96500" stroke-dasharray="10 7" stroke-width="2.5"></circle>
+    <circle cx="600" cy="350" fill="none" r="210" stroke="#c96500" stroke-width="2"></circle>
+    <circle cx="600" cy="350" fill="none" r="110" stroke="#c96500" stroke-width="1.5"></circle>
+  </svg>
+  <div class="t-center pos-rel" style="max-width:800px;">
+    <div class="eyebrow anim mb-16">Part 1</div>
+    <h1 class="anim ls-tight3 fs-hero-xl" style="line-height:1.0; margin:0 0 28px;">초급</h1>
+    <p class="lead anim t-center fg-dim fs-title" style="max-width:600px; margin:0 auto 32px;">오늘 처음 설치하는 사람을 위한 가이드</p>
+    <div class="anim row g-10 flex-wrap jc-center">
+      <div class="bg-surface fs-body fg-dim fw-600 r-pill bd pad-10-18">터미널 한 번도 안 써봤어도 OK</div>
+      <div class="bg-surface fs-body fg-dim fw-600 r-pill bd pad-10-18">개발자 아니어도 OK</div>
+      <div class="bg-warn fs-body fg-orange fw-700 r-pill bd-orange pad-10-18">오늘 바로 첫 결과물</div>
+    </div>
+  </div>
+<div class="chapter-lounge"><span class="cl-icon">#</span>막힐 때는 슬랙 <a class="cl-link" href="https://miridih.slack.com/archives/C0AUZDBKGLW" target="_blank">ax_라운지</a> 채널에 편하게 물어보세요</div>
+</div>
+
+
+<div class="slide w-full row stack h-full ov-hidden" id="beg-3" style="padding: 36px 40px; gap: 20px; justify-content:center;">
+
+  <!-- 헤더 -->
+  <div class="t-center">
+    <div class="fs-body-sm fw-700 fg-orange mb-8 t-upper ls-wide5">초급 01</div>
+    <h2 class="fs-display fw-800 fg-ink kw m-0 ls-tight2">시작 3단계 (데스크탑 앱)</h2>
+  </div>
+
+  <!-- 3단계 — 메인 (가로 3-col) -->
+  <div class="grid" style="grid-template-columns:1fr 1fr 1fr; gap:20px; align-items:stretch;">
+
+    <!-- Step 1 -->
+    <div class="row stack g-14 bd r-16 bg-surface" style="padding:28px 28px;">
+      <div class="row ai-center g-12">
+        <div class="row ai-center jc-center fw-800 fg-white r-full bg-orange flex-shrink-0" style="width:36px;height:36px;font-size:16px;">1</div>
+        <div class="fs-title-sm fw-700 fg-dimmer t-upper ls-wide4">다운로드</div>
+      </div>
+      <div class="fs-title fw-800 fg-ink kw ls-tight1">Claude 앱<br/>설치하기</div>
+      <div class="fs-body fg-dim kw lh-16">claude.ai/download<br/>→ Mac / Windows 선택</div>
+      <a href="https://claude.com/ko-kr/download" target="_blank" class="fs-body-sm fw-700 fg-orange kw r-8 pad-8-12 bg-surface2 bd" style="text-decoration:none; display:block; text-align:center;">다운로드 받으러가기 →</a>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="row stack g-14 bd r-16 bg-surface" style="padding:28px 28px;">
+      <div class="row ai-center g-12">
+        <div class="row ai-center jc-center fw-800 fg-white r-full bg-orange flex-shrink-0" style="width:36px;height:36px;font-size:16px;">2</div>
+        <div class="fs-title-sm fw-700 fg-dimmer t-upper ls-wide4">로그인</div>
+      </div>
+      <div class="fs-title fw-800 fg-ink kw ls-tight1">미리디 팀플랜<br/>계정으로 로그인</div>
+      <div class="fs-body fg-dim kw lh-16">플랜 없다면 리드분과 상의 후<br/>기안 상신해 주세요</div>
+    </div>
+
+    <!-- Step 3 (강조) -->
+    <div class="row stack g-14 r-16 bg-warn bd-2-orange" style="padding:28px 28px;">
+      <div class="row ai-center g-12">
+        <div class="row ai-center jc-center fw-800 fg-white r-full bg-orange flex-shrink-0" style="width:36px;height:36px;font-size:16px;">3</div>
+        <div class="fs-title-sm fw-700 fg-orange t-upper ls-wide4">시작</div>
+      </div>
+      <div class="fs-title fw-800 fg-ink kw ls-tight1">스타터킷 폴더로<br/>바로 시작</div>
+      <div class="fs-body fg-orange kw lh-16">폴더 다운로드 후<br/>해당 폴더에서 시작</div>
+      <a href="https://drive.google.com/file/d/1P0ZXa1EWeV72BsYpOlCLn8rairBz4XlF/view" target="_blank" class="fs-body-sm fw-700 fg-white kw r-8 pad-8-12 t-center" style="text-decoration:none; display:block; background:#C96500;">스타터킷 다운로드받기 →</a>
+    </div>
+
+  </div>
+
+  <!-- 캡션: 스타터킷 적용사항 -->
+  <div class="anim row stack g-10 bg-surface2 bd r-12" style="padding:14px 20px; width:700px; min-width:700px; max-width:700px; align-self:center; box-sizing:border-box;">
+    <div class="fs-body-sm fw-700 fg-orange t-upper ls-wide4">스타터킷 적용사항</div>
+    <ul class="row stack g-4 m-0 pl-18 fs-body fg-dim kw lh-16">
+      <li><span class="fw-700 fg-ink">CLAUDE.md 사전 세팅</span> — 매번 같은 맥락 설명 안 해도 됨</li>
+      <li><span class="fw-700 fg-ink">컨텍스트 압축 규칙</span> 내장 — 긴 작업도 토큰 덜 씀</li>
+      <li><span class="fw-700 fg-ink">적절한 라우팅 구조</span> — 매번 전체를 읽지 않고 필요한 파일만 골라 읽음</li>
+    </ul>
+  </div>
+
+</div>
+
+
+<div class="slide w-full row stack h-full ov-hidden" id="beg-4" style="padding:32px 64px 28px; gap:16px; justify-content:flex-start;">
+
+  <!-- 타이틀 -->
+  <div class="t-center">
+    <div class="fs-body-sm fw-700 fg-orange mb-6 t-upper ls-wide5">초급 02</div>
+    <h2 class="fs-display fw-800 fg-ink kw m-0 ls-tight2">AI 사용법은 <span class="highlight">AI가 제일 잘알아요.</span></h2>
+    <div class="fs-body fg-dim kw lh-16 mt-10">한쪽엔 LLM, 한쪽엔 클로드코드를 두고 AI의 답변이나 상황을 이미지로 찍어 질문해 보세요.<br/>AI가 상황에 딱 맞게, 친절하게 가이드해 줍니다.</div>
+  </div>
+
+  <!-- 스크린샷 -->
+  <div class="row ai-center jc-center flex-1" style="min-height:0; margin-top:8px;">
+    <img
+      src="beg4_screenshot.png"
+      style="max-width:110%; max-height:100%; border-radius:16px; box-shadow:0 8px 32px rgba(0,0,0,0.14); object-fit:contain;"
+    />
+  </div>
+
+</div>
+
+
+
+
+<div class="slide w-full row stack h-full ov-hidden" id="beg-11"
+  style="padding: 36px 16px; gap: 20px; justify-content: flex-start;">
+
+  <!-- 헤더 -->
+  <div class="t-center">
+    <div class="fs-body-sm fw-700 fg-orange mb-8 t-upper ls-wide5">초급 03</div>
+    <h2 class="fs-display fw-800 fg-ink kw m-0 ls-tight2">작은 반복업무 하나씩 위임해 보기</h2>
+  </div>
+
+  <!-- Before → After 테이블 -->
+  <div class="row stack" style="gap:14px; flex:1; width:66.67%; align-self:center;">
+
+    <!-- 테이블 헤더 -->
+    <div class="grid ai-center" style="grid-template-columns:1fr 60px 1fr; gap:16px;">
+      <div class="t-center fs-lead fw-700 fg-dim" style="letter-spacing:0.05em;">일상 반복 업무</div>
+      <div></div>
+      <div class="t-center fs-lead fw-800 fg-orange" style="letter-spacing:0.05em;">위임한다면</div>
+    </div>
+
+    <!-- 행 1 -->
+    <div class="grid ai-center" style="grid-template-columns:1fr 60px 1fr; gap:16px; flex:1;">
+      <div class="bg-surface2 t-center bd r-14 h-full row ai-center jc-center">
+        <div class="fs-title fw-700 fg-ink kw">hello.txt 만들기</div>
+      </div>
+      <div class="t-center fg-orange fw-700 fs-title">→</div>
+      <div class="bg-warn t-center bd-orange r-14 h-full row ai-center jc-center">
+        <div class="fs-title fw-800 fg-orange kw">보고서 자동화</div>
+      </div>
+    </div>
+
+    <!-- 행 2 -->
+    <div class="grid ai-center" style="grid-template-columns:1fr 60px 1fr; gap:16px; flex:1;">
+      <div class="bg-surface2 t-center bd r-14 h-full row ai-center jc-center">
+        <div class="fs-title fw-700 fg-ink kw">CSV 요약</div>
+      </div>
+      <div class="t-center fg-orange fw-700 fs-title">→</div>
+      <div class="bg-warn t-center bd-orange r-14 h-full row ai-center jc-center">
+        <div class="fs-title fw-800 fg-orange kw">VOC 데이터 분석</div>
+      </div>
+    </div>
+
+    <!-- 행 3 -->
+    <div class="grid ai-center" style="grid-template-columns:1fr 60px 1fr; gap:16px; flex:1;">
+      <div class="bg-surface2 t-center bd r-14 h-full row ai-center jc-center">
+        <div class="fs-title fw-700 fg-ink kw">HTML 자기소개</div>
+      </div>
+      <div class="t-center fg-orange fw-700 fs-title">→</div>
+      <div class="bg-warn t-center bd-orange r-14 h-full row ai-center jc-center">
+        <div class="fs-title fw-800 fg-orange kw">팀 현황 페이지</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 빈칸 박스 -->
+  <div class="bg-surface2 t-center r-14" style="border: 2px dashed var(--border2); padding:24px 32px; width:66.67%; align-self:center;">
+    <span class="fg-dim kw fs-lead">
+      나는 매번 <span class="fg-orange fw-700 ib" style="border-bottom:2px solid var(--orange); min-width:160px; padding:0 6px;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> 하는 게 귀찮다
+    </span>
+  </div>
+
+</div>
+
+
+<div class="slide w-full row stack g-16 h-full ov-hidden" id="beg-6"
+  style="padding: 36px 56px;">
+
+  <!-- 헤더 -->
+  <div class="t-center">
+    <div class="fs-body-sm fw-700 fg-orange mb-6 t-upper ls-wide5">초급 04</div>
+    <h2 class="fw-800 fg-ink kw m-0 ls-tight2" style="font-size:clamp(28px,38px,44px);"><span class="highlight">클로드코드만 할 수 있는 일</span></h2>
+    <div class="fs-body fg-dim mt-8 kw">웹 LLM은 못 해요 — 내 컴퓨터·폴더·시스템에 직접 손이 닿는 작업들</div>
+  </div>
+
+  <!-- 2×2 카드 그리드 -->
+  <div class="grid grid-2" style="gap:14px;">
+
+    <!-- 1. 폴더 통째 탐색 -->
+    <div class="bg-surface row stack g-10 bd r-14" style="padding:18px 22px;">
+      <div class="row ai-center jc-between">
+        <span class="fs-caption fw-700 fg-dimmer t-upper ls-wide4 r-20 pad-3-10 bg-surface2 bd">폴더 통째 읽기</span>
+        <span class="fs-tiny fw-600 fg-orange ls-wide2">로컬 파일 직접 접근</span>
+      </div>
+      <div class="fs-lead fw-800 fg-ink kw ls-tight1">기획서 폴더 10개 일괄 분석</div>
+      <div class="fs-body-sm fg-dim kw bd r-8 lh-15 italic pad-10-12 bg-surface2 mt-auto">"~/Documents/기획 폴더에 있는 .md 파일 전부 읽고, 중복되는 주장 3개 찾아줘. 각 파일명도 같이 표시"</div>
+    </div>
+
+    <!-- 2. 실제 파일 생성·수정 -->
+    <div class="bg-surface row stack g-10 bd r-14" style="padding:18px 22px;">
+      <div class="row ai-center jc-between">
+        <span class="fs-caption fw-700 fg-dimmer t-upper ls-wide4 r-20 pad-3-10 bg-surface2 bd">파일 만들고 고치기</span>
+        <span class="fs-tiny fw-600 fg-orange ls-wide2">디스크에 직접 쓰기</span>
+      </div>
+      <div class="fs-lead fw-800 fg-ink kw ls-tight1">100개 이미지 한 번에 리사이즈</div>
+      <div class="fs-body-sm fg-dim kw bd r-8 lh-15 italic pad-10-12 bg-surface2 mt-auto">"~/Desktop/photos 안의 이미지 전부 1024px로 리사이즈해서 photos/resized/ 에 저장. 원본은 건들지 마"</div>
+    </div>
+
+    <!-- 3. 명령어·스크립트 실행 -->
+    <div class="bg-surface row stack g-10 bd r-14" style="padding:18px 22px;">
+      <div class="row ai-center jc-between">
+        <span class="fs-caption fw-700 fg-dimmer t-upper ls-wide4 r-20 pad-3-10 bg-surface2 bd">명령어 직접 실행</span>
+        <span class="fs-tiny fw-600 fg-orange ls-wide2">bash · python · git</span>
+      </div>
+      <div class="fs-lead fw-800 fg-ink kw ls-tight1">VOC 5천 줄 → 분류·시각화</div>
+      <div class="fs-body-sm fg-dim kw bd r-8 lh-15 italic pad-10-12 bg-surface2 mt-auto">"voc.csv 5천 줄을 카테고리별로 분류하는 파이썬 스크립트 짜고, 실행해서 결과를 chart.html로 만들어줘"</div>
+    </div>
+
+    <!-- 4. 자동화·반복 작업 -->
+    <div class="bg-surface row stack g-10 bd-2-orange r-14" style="padding:18px 22px;">
+      <div class="row ai-center jc-between">
+        <span class="fs-caption fw-700 fg-orange t-upper ls-wide4 r-20 pad-3-10 bg-warn bd-orange">자동화 만들기</span>
+        <span class="fs-tiny fw-600 fg-orange ls-wide2">cron · 슬랙 알림</span>
+      </div>
+      <div class="fs-lead fw-800 fg-ink kw ls-tight1">매주 자동 리포트 → 슬랙</div>
+      <div class="fs-body-sm fg-dim kw bd r-8 lh-15 italic pad-10-12 bg-surface2 mt-auto">"매주 월요일 9시에 지난주 GA 데이터 받아 리포트 만들고 슬랙으로 보내는 스크립트 만들어줘"</div>
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- 토큰 최적화 슬라이드 (신규) -->
+<div class="slide w-full row stack h-full ov-hidden" id="beg-token"
+  style="padding: 36px 40px; gap: 18px; justify-content:flex-start;">
+
+  <!-- 헤더 -->
+  <div class="t-center">
+    <div class="fs-body-sm fw-700 fg-orange mb-8 t-upper ls-wide5">초급 05</div>
+    <h2 class="fs-display fw-800 fg-ink kw m-0 ls-tight2">이쯤 됐으면 슬슬 <span class="highlight">토큰 최적화</span>가 필요할 거예요</h2>
+    <p class="fs-body fg-dim kw mt-8" style="margin:8px auto 0;">반복하다 보면 한 번에 쓰는 토큰이 늘어나요. 작업 길이·비용·속도가 동시에 좋아지는 4가지 액션</p>
+  </div>
+
+  <!-- 4개 액션 카드 (2x2 그리드) -->
+  <div class="grid grid-2 anim" style="gap:14px; flex:1; min-height:0; align-items:stretch;">
+
+    <!-- 액션 1 -->
+    <div class="row stack g-6 bd r-14 bg-surface2" style="padding:14px 18px;">
+      <div class="row ai-center g-10">
+        <div class="row ai-center jc-center fw-800 fg-white r-full bg-orange flex-shrink-0" style="width:26px;height:26px;font-size:13px;">1</div>
+        <div class="fs-lead fw-800 fg-ink kw ls-tight1">새 대화로 자주 끊기</div>
+      </div>
+      <div class="fs-body-sm fg-dim kw lh-16">한 대화에 모든 작업을 몰아넣으면 컨텍스트가 무거워져요. 작업이 바뀌면 새 대화로.</div>
+      <div class="fs-body-sm fw-700 fg-orange kw bg-warn r-8" style="padding:5px 10px; margin-top:auto; width:fit-content;">/clear · /compact 활용</div>
+    </div>
+
+    <!-- 액션 2 -->
+    <div class="row stack g-6 bd r-14 bg-surface2" style="padding:14px 18px;">
+      <div class="row ai-center g-10">
+        <div class="row ai-center jc-center fw-800 fg-white r-full bg-orange flex-shrink-0" style="width:26px;height:26px;font-size:13px;">2</div>
+        <div class="fs-lead fw-800 fg-ink kw ls-tight1">필요한 것만 읽히기</div>
+      </div>
+      <div class="fs-body-sm fg-dim kw lh-16">"이 폴더 다 읽어봐"보다 "이 파일만 읽어"가 토큰을 10배 절약해요.</div>
+      <div class="fs-body-sm fw-700 fg-orange kw bg-warn r-8" style="padding:5px 10px; margin-top:auto; width:fit-content;">파일 경로 명시</div>
+    </div>
+
+    <!-- 액션 3 -->
+    <div class="row stack g-6 bd r-14 bg-surface2" style="padding:14px 18px;">
+      <div class="row ai-center g-10">
+        <div class="row ai-center jc-center fw-800 fg-white r-full bg-orange flex-shrink-0" style="width:26px;height:26px;font-size:13px;">3</div>
+        <div class="fs-lead fw-800 fg-ink kw ls-tight1">CLAUDE.md에 맥락 저장</div>
+      </div>
+      <div class="fs-body-sm fg-dim kw lh-16">매번 같은 설명을 반복하지 마세요. 자주 쓰는 맥락은 한 번 적어두면 끝.</div>
+      <div class="fs-body-sm fw-700 fg-orange kw bg-warn r-8" style="padding:5px 10px; margin-top:auto; width:fit-content;">규칙·용어·금지사항</div>
+    </div>
+
+    <!-- 액션 4 -->
+    <div class="row stack g-6 bd-2-orange r-14 bg-warn" style="padding:14px 18px;">
+      <div class="row ai-center g-10">
+        <div class="row ai-center jc-center fw-800 fg-white r-full bg-orange flex-shrink-0" style="width:26px;height:26px;font-size:13px;">4</div>
+        <div class="fs-lead fw-800 fg-ink kw ls-tight1">Sonnet ↔ Haiku 적재적소</div>
+      </div>
+      <div class="fs-body-sm fg-ink kw lh-16">간단한 분류·요약은 Haiku로 충분. 설계·판단만 Sonnet으로 — 비용 5배 차이.</div>
+      <div class="fs-body-sm fw-700 fg-white kw r-8" style="padding:5px 10px; margin-top:auto; width:fit-content; background:var(--orange);">반복 작업 = Haiku</div>
+    </div>
+
+  </div>
+
+  <!-- key-line: 스타터킷 안내 -->
+  <div class="key-line t-center fs-body fw-700 kw r-12" style="padding:12px 24px;">
+    <a href="https://drive.google.com/file/d/1P0ZXa1EWeV72BsYpOlCLn8rairBz4XlF/view" target="_blank" class="fg-orange fw-800" style="text-decoration:underline;">스타터킷</a>에는 ①·②·③ 규칙이 이미 CLAUDE.md에 들어 있어요
+  </div>
+
+</div>
+
+
+<!-- beg-7: 에러 대처 + 바로 쓰는 프롬프트 (초급 06) -->
+<div class="slide w-full row stack h-full ov-hidden" id="beg-7"
+  style="padding: 28px 40px; gap: 14px; justify-content:flex-start;">
+
+  <!-- 헤더 -->
+  <div class="t-center">
+    <div class="fs-body-sm fw-700 fg-orange mb-6 t-upper ls-wide5">초급 06</div>
+    <h2 class="fw-800 fg-ink kw m-0 ls-tight2" style="font-size:clamp(24px,30px,34px);">에러 대처 · 바로 쓰는 프롬프트</h2>
+  </div>
+
+  <!-- 메인 2컬럼 -->
+  <div class="grid" style="grid-template-columns:1fr 1fr; gap:24px; flex:1; min-height:0; align-items:stretch;">
+
+    <!-- 왼쪽: 에러가 났을 때 -->
+    <div class="row stack" style="gap:10px;">
+      <span class="fs-body fw-800 fg-ink kw ls-tight2" style="font-size:18px;">에러가 났을 때</span>
+
+      <!-- 에러 3개 카드 (= 프롬프트 위 5개와 동일한 분배) -->
+      <div class="row stack" style="gap:8px; flex:1;">
+
+        <div class="bg-surface row stack r-12" style="padding:11px 16px; gap:4px; border:2px solid var(--bad-br); flex:1;">
+          <div class="fw-800 fg-bad kw fs-body-sm lh-155">권한 거부 팝업</div>
+          <div class="fs-caption fg-dim kw">"이 폴더에 접근할 수 없습니다"</div>
+          <div class="fs-body-sm fw-700 fg-orange kw" style="margin-top:auto;">→ 시스템 설정 → 파일 접근 → Claude 허용</div>
+        </div>
+
+        <div class="bg-surface row stack r-12" style="padding:11px 16px; gap:4px; border:2px solid var(--bad-br); flex:1;">
+          <div class="fw-800 fg-bad kw fs-body-sm lh-155">응답이 멈추거나 길어짐</div>
+          <div class="fs-caption fg-dim kw">컨텍스트 과부하 상태</div>
+          <div class="fs-body-sm fw-700 fg-orange kw" style="margin-top:auto;">→ 새 대화 시작 + 작업 잘게 쪼개기</div>
+        </div>
+
+        <div class="bg-surface row stack r-12" style="padding:11px 16px; gap:4px; border:2px solid var(--bad-br); flex:1;">
+          <div class="fw-800 fg-bad kw fs-body-sm lh-155">의도와 다른 결과</div>
+          <div class="fs-caption fg-dim kw">원하는 게 아닌 엉뚱한 결과물</div>
+          <div class="fs-body-sm fw-700 fg-orange kw" style="margin-top:auto;">→ "되돌려줘" → 더 구체적으로 재요청</div>
+        </div>
+
+        <!-- 에러는 실패가 아니에요 (= 우측 마지막 자동화 카드와 동일 높이) -->
+        <div class="bg-warn row stack bd-2-orange r-12" style="padding:11px 16px; gap:4px; flex:1;">
+          <div class="fw-800 fg-orange kw fs-body lh-155">에러는 실패가 아니에요</div>
+          <div class="fs-body-sm fg-orange kw" style="margin-top:auto; opacity:0.9;">다시 시도할 재료입니다</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 오른쪽: 아 이런 것도 되네 — 프롬프트 6개 -->
+    <div class="row stack" style="gap:10px;">
+      <span class="fs-body fw-800 fg-ink kw ls-tight2" style="font-size:18px;">아 이런 것도 되네</span>
+
+      <div class="row stack" style="gap:8px; flex:1;">
+
+        <div class="bg-surface row stack bd r-12" style="padding:11px 16px; gap:4px; flex:1;">
+          <div class="fw-800 fg-ink kw fs-body-sm lh-155">"다운로드 폴더 PDF 읽고 액션아이템 표로 뽑아줘"</div>
+          <div class="fs-caption fg-dim kw" style="margin-top:auto;">내 컴퓨터 파일을 직접 읽어요</div>
+        </div>
+
+        <div class="bg-surface row stack bd r-12" style="padding:11px 16px; gap:4px; flex:1;">
+          <div class="fw-800 fg-ink kw fs-body-sm lh-155">"이 기획서 논리 구멍 찾아서 반론 3개 독하게 들어줘"</div>
+          <div class="fs-caption fg-dim kw" style="margin-top:auto;">셀프 리뷰어로 쓸 수 있어요</div>
+        </div>
+
+        <div class="bg-surface row stack bd r-12" style="padding:11px 16px; gap:4px; flex:1;">
+          <div class="fw-800 fg-ink kw fs-body-sm lh-155">"VOC 엑셀 500줄 분류해서 HTML 리포트 만들어줘"</div>
+          <div class="fs-caption fg-dim kw" style="margin-top:auto;">대량 데이터도 그냥 던지면 돼요</div>
+        </div>
+
+        <div class="bg-surface row stack bd r-12" style="padding:11px 16px; gap:4px; flex:1;">
+          <div class="fw-800 fg-ink kw fs-body-sm lh-155">"이 폴더 기획서 10개 전부 읽고 중복 내용 찾아줘"</div>
+          <div class="fs-caption fg-dim kw" style="margin-top:auto;">폴더 통째로 탐색해요</div>
+        </div>
+
+        <div class="bg-surface row stack bd r-12" style="padding:11px 16px; gap:4px; flex:1;">
+          <div class="fw-800 fg-ink kw fs-body-sm lh-155">"경쟁사 앱스토어 리뷰 긁어서 불만 패턴 분류해줘"</div>
+          <div class="fs-caption fg-dim kw" style="margin-top:auto;">웹 크롤링도 시킬 수 있어요</div>
+        </div>
+
+        <div class="bg-warn row stack bd-2-orange r-12" style="padding:11px 16px; gap:4px; flex:1;">
+          <div class="fw-800 fg-orange kw fs-body lh-155">"이 작업 스크립트로 만들어서 매주 자동으로 돌아가게 해줘"</div>
+          <div class="fs-body-sm fg-orange kw" style="margin-top:auto; opacity:0.9;">한 번 만들면 반복 안 해도 돼요</div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+
+
+
+<div class="slide w-full row stack h-full ov-hidden" id="beg-1"
+  style="padding: 28px 40px; gap: 14px; justify-content: flex-start;">
+
+  <!-- 헤더 -->
+  <div class="t-center">
+    <div class="fs-body-sm fw-700 fg-orange mb-6 t-upper ls-wide5">초급 마무리</div>
+    <h2 class="fs-display fw-800 fg-ink kw m-0 ls-tight2">마무리 — <span class="highlight">보안 체크</span></h2>
+    <p class="fs-body fg-dim kw" style="margin:6px 0 0;">딱 한 번만 확인하고 시작하세요</p>
+  </div>
+
+  <!-- 보안 카드 6개 (3x2 그리드) -->
+  <div class="grid grid-3" style="gap:12px; flex:1; min-height:0; align-items:stretch;">
+
+    <!-- 절대 입력 금지 -->
+    <div class="row stack g-6 bd-bad r-12 bg-bad-soft" style="padding:14px 18px;">
+      <div class="fs-caption fw-700 fg-bad t-upper ls-wide4">절대 입력 금지</div>
+      <div class="fs-lead fw-800 fg-bad kw ls-tight1">사내 기밀 데이터</div>
+      <div class="fs-body-sm fg-bad kw lh-16">고객 정보·내부 문서·소스 코드</div>
+      <div class="fs-body-sm fg-bad fw-700 kw bd-bad r-8" style="padding:6px 10px; background:white; margin-top:auto;">→ 더미 데이터로 먼저 검증</div>
+    </div>
+
+    <!-- API 키 -->
+    <div class="row stack g-6 bd-bad r-12 bg-bad-soft" style="padding:14px 18px;">
+      <div class="fs-caption fw-700 fg-bad t-upper ls-wide4">절대 입력 금지</div>
+      <div class="fs-lead fw-800 fg-bad kw ls-tight1">API 키 · 토큰 · 비밀번호</div>
+      <div class="fs-body-sm fg-bad kw lh-16">한 번 노출되면 즉시 폐기 필요</div>
+      <div class="fs-body-sm fg-bad fw-700 kw bd-bad r-8" style="padding:6px 10px; background:white; margin-top:auto;">→ .env 파일·비밀 매니저 사용</div>
+    </div>
+
+    <!-- 회사 정책 -->
+    <div class="row stack g-6 bd-bad r-12 bg-bad-soft" style="padding:14px 18px;">
+      <div class="fs-caption fw-700 fg-bad t-upper ls-wide4">먼저 확인</div>
+      <div class="fs-lead fw-800 fg-bad kw ls-tight1">회사 AI 사용 정책</div>
+      <div class="fs-body-sm fg-bad kw lh-16">외부 전송 가능 범위 · 사내 가이드</div>
+      <div class="fs-body-sm fg-bad fw-700 kw bd-bad r-8" style="padding:6px 10px; background:white; margin-top:auto;">→ 정책 없으면 보안팀에 먼저</div>
+    </div>
+
+    <!-- 권한 범위 -->
+    <div class="bg-surface2 row stack g-6 bd r-12" style="padding:14px 18px;">
+      <div class="fs-caption fw-700 fg-dimmer t-upper ls-wide4">최소 권한</div>
+      <div class="fs-lead fw-800 fg-ink kw ls-tight1">필요한 폴더만 허용</div>
+      <div class="fs-body-sm fg-dim kw lh-16">시스템 설정 → 파일 접근권한 점검</div>
+      <div class="bg-warn fs-body-sm fg-orange fw-700 kw r-8" style="padding:6px 10px; margin-top:auto;">→ ~/Documents 전체 X · 작업 폴더만 O</div>
+    </div>
+
+    <!-- 작업 전 백업 -->
+    <div class="bg-surface2 row stack g-6 bd r-12" style="padding:14px 18px;">
+      <div class="fs-caption fw-700 fg-dimmer t-upper ls-wide4">실수 대비</div>
+      <div class="fs-lead fw-800 fg-ink kw ls-tight1">작업 전 백업·Git 커밋</div>
+      <div class="fs-body-sm fg-dim kw lh-16">언제든 되돌릴 수 있게</div>
+      <div class="bg-warn fs-body-sm fg-orange fw-700 kw r-8" style="padding:6px 10px; margin-top:auto;">→ git commit · 폴더 복사 백업</div>
+    </div>
+
+    <!-- 안전하게 시작 (강조) -->
+    <div class="row stack g-6 bd-2-orange r-12 bg-warn" style="padding:14px 18px;">
+      <div class="fs-caption fw-700 fg-orange t-upper ls-wide4">안전하게 시작</div>
+      <div class="fs-lead fw-800 fg-ink kw ls-tight1">처음엔 연습 폴더에서만</div>
+      <div class="fs-body-sm fg-ink kw lh-16">바탕화면·Downloads에서 먼저 익숙해지기</div>
+      <div class="fs-body-sm fw-700 fg-white kw r-8" style="padding:6px 10px; background:var(--orange); margin-top:auto;">→ 실제 업무 데이터는 익숙해진 후</div>
+    </div>
+
+  </div>
+
+  <!-- key-line -->
+  <div class="key-line t-center fs-body fw-700 kw r-12" style="padding:12px 24px;">
+    이 6가지만 지키면 — <span class="fg-orange">사고 없이 안전하게</span> 시작할 수 있어요
+  </div>
+
+</div>
+
+
+<div class="slide p-0" id="beg-10">
+  <svg class="w-full pos-abs inset-0 h-full pe-none" aria-hidden="true" preserveAspectRatio="xMidYMid slice" style="opacity:0.05;" viewBox="0 0 1200 700">
+    <circle cx="600" cy="350" fill="none" r="260" stroke="#c96500" stroke-dasharray="6 5" stroke-width="1.5"></circle>
+  </svg>
+  <div class="row stack ai-center jc-center t-center g-18 pos-abs inset-0">
+    <div class="anim fg-orange lh-1 ls-tight3 fw-900" style="font-size:clamp(80px,140px,160px);">50%</div>
+    <h2 class="anim fs-display">여기까지만 해도 <span class="highlight">충분해요</span></h2>
+    <ul class="list anim" style="max-width:420px; margin:8px auto 0;">
+      <li><div class="dot o"></div><span>설치 완료</span></li>
+      <li><div class="dot o"></div><span>첫 대화 성공</span></li>
+      <li><div class="dot o"></div><span>미션 하나 완료</span></li>
+    </ul>
+    <p class="lead anim fs-lead fg-dim mt-8">나머지 50%는 반복과 응용</p>
+    <p class="anim fs-body-sm fg-dimmer kw" style="max-width:640px; line-height:1.7; margin-top:16px;">여기까지 하셨으면 누가 도와주지 않아도 이것저것 시도해보시면서 더 깊고, 넓게 쓰시게 될 거라고 생각해요.</p>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+<div class="slide p-0 ai-center" id="mid-0">
+  <svg class="w-full pos-abs inset-0 h-full pe-none" aria-hidden="true" preserveAspectRatio="xMidYMid slice" style="opacity:0.12;" viewBox="0 0 1200 700">
+    <circle cx="600" cy="350" fill="none" r="320" stroke="#c96500" stroke-dasharray="10 7" stroke-width="2.5"></circle>
+    <circle cx="600" cy="350" fill="none" r="210" stroke="#c96500" stroke-width="2"></circle>
+    <circle cx="600" cy="350" fill="none" r="110" stroke="#c96500" stroke-width="1.5"></circle>
+  </svg>
+  <div class="t-center pos-rel" style="max-width:800px;">
+    <div class="eyebrow anim mb-16">Part 2</div>
+    <h1 class="anim ls-tight3 fs-hero-xl" style="line-height:1.0; margin:0 0 28px;">중급</h1>
+    <p class="lead anim t-center fg-dim fs-title" style="max-width:640px; margin:0 auto 32px;">반복을 줄이고, AI와 장기 협업하는 법</p>
+    <div class="anim row g-10 flex-wrap jc-center">
+      <div class="bg-surface fs-body fg-dim fw-600 r-pill bd pad-10-18">설치·기본 대화 OK</div>
+      <div class="bg-warn fs-body fg-orange fw-700 r-pill bd-orange pad-10-18">매번 설명 없이도 되는 구조</div>
+    </div>
+  </div>
+<div class="chapter-lounge"><span class="cl-icon">#</span>막힐 때는 슬랙 <a class="cl-link" href="https://miridih.slack.com/archives/C0AUZDBKGLW" target="_blank">ax_라운지</a> 채널에 편하게 물어보세요</div>
+</div>
+
+
+<div class="slide ai-center slide-pad" id="mid-1">
+
+  <div class="w-full" style="max-width:1100px;">
+    <!-- 제목 -->
+    <div class="anim t-center" style="margin-bottom:28px;">
+      <div class="eyebrow">개념 관계 한눈에</div>
+      <h2 class="fs-display">이 5가지가 <span class="highlight">중급의 전부</span>예요</h2>
+    </div>
+
+    <!-- 다이어그램 — 좌3 · 허브 · 우2 -->
+    <div class="anim ai-center grid" style="grid-template-columns:1fr 160px 1fr; gap:0;">
+
+      <!-- 좌측 3개: CLAUDE.md / memory / 슬래시 커맨드 -->
+      <div class="row stack g-10" style="align-items:flex-end;">
+        <div class="row ai-center">
+          <div class="bg-warn t-right r-10 pad-10-18 bd-2-orange" style="min-width:180px;">
+            <div class="fw-800 fg-orange fs-body">CLAUDE.md</div>
+            <div class="fs-body-sm fg-dim mt-3">기본 규칙·컨텍스트 제공</div>
+          </div>
+          <div class="row ai-center flex-shrink-0">
+            <div class="h-2px bg-border2" style="width:40px;"></div>
+            <div style="width:0; height:0; border-top:5px solid transparent; border-bottom:5px solid transparent; border-left:7px solid var(--border2);"></div>
+          </div>
+        </div>
+        <div class="row ai-center">
+          <div class="t-right r-10 pad-10-18 bg-surface2" style="border:1px solid var(--border2); min-width:180px;">
+            <div class="fw-800 fg-info fs-body">memory/ 폴더</div>
+            <div class="fs-body-sm fg-dim mt-3">장기 기억</div>
+          </div>
+          <div class="row ai-center flex-shrink-0">
+            <div class="h-2px bg-border2" style="width:40px;"></div>
+            <div style="width:0; height:0; border-top:5px solid transparent; border-bottom:5px solid transparent; border-left:7px solid var(--border2);"></div>
+          </div>
+        </div>
+        <div class="row ai-center">
+          <div class="t-right r-10 pad-10-18 bg-surface2" style="border:1px solid var(--border2); min-width:180px;">
+            <div class="fw-800 fg-good fs-body">슬래시 커맨드</div>
+            <div class="fs-body-sm fg-dim mt-3">빠른 실행</div>
+          </div>
+          <div class="row ai-center flex-shrink-0">
+            <div class="h-2px bg-border2" style="width:40px;"></div>
+            <div style="width:0; height:0; border-top:5px solid transparent; border-bottom:5px solid transparent; border-left:7px solid var(--border2);"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 중앙 허브 -->
+      <div class="bg-warn row stack ai-center jc-center t-center r-full" style="width:160px; height:160px; border:3px solid var(--orange-br); box-shadow:0 8px 32px rgba(201,101,0,0.12); justify-self:center;">
+        <div class="fs-body-sm fw-800 fg-orange ls-wide2 t-upper">Claude</div>
+        <div class="fg-ink fw-900 lh-11" style="font-size:clamp(22px,26px,28px); margin-top:2px;">Code</div>
+        <div class="r-pill" style="width:28px; height:1.5px; background:var(--orange-br); margin:8px auto;"></div>
+        <div class="fs-body-sm fg-dim lh-14">더 잘<br>일하는 AI</div>
+      </div>
+
+      <!-- 우측 2개: 훅 / 서브에이전트 -->
+      <div class="row stack g-10 ai-start">
+        <div class="row ai-center">
+          <div class="row ai-center flex-shrink-0">
+            <div style="width:0; height:0; border-top:5px solid transparent; border-bottom:5px solid transparent; border-right:7px solid var(--border2);"></div>
+            <div class="h-2px bg-border2" style="width:40px;"></div>
+          </div>
+          <div class="t-left r-10 pad-10-18" style="background:#fdf4ff; border:2px solid #e0b8f8; min-width:180px;">
+            <div class="fw-800 fg-info fs-body">훅 (Hook)</div>
+            <div class="fs-body-sm fg-dim mt-3">자동 트리거</div>
+          </div>
+        </div>
+        <div class="row ai-center">
+          <div class="row ai-center flex-shrink-0">
+            <div style="width:0; height:0; border-top:5px solid transparent; border-bottom:5px solid transparent; border-right:7px solid var(--border2);"></div>
+            <div class="h-2px bg-border2" style="width:40px;"></div>
+          </div>
+          <div class="t-left r-10 pad-10-18" style="background:#fff9f0; border:2px solid #fcd89a; min-width:180px;">
+            <div class="fw-800 fs-body" style="color:#92400e;">서브에이전트</div>
+            <div class="fs-body-sm fg-dim mt-3">병렬 전문가</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- key-line -->
+    <div class="anim" style="margin-top:22px;">
+      <div class="key-line t-center">
+        이 5가지가 중급의 전부예요. 하나씩 배울게요.
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide slide-pad" id="mid-2"> <div class="w-full mw-content"> <div class="anim" style="margin-bottom:22px;"> <div class="eyebrow">CLAUDE.md</div> <h2>AI에게 보내는 <span class="highlight">채용 공고</span></h2> </div> <div class="two-col anim ai-center" style="gap:32px;"> <!-- 좌: 개념 --> <div class="row stack g-12"> <div class="card "> <div class="card-title">이게 뭔가요?</div> <ul class="list m-0"> <li><div class="dot o"></div><span>프로젝트 폴더 <strong>최상단</strong>에 두는 마크다운 파일</span></li> <li><div class="dot o"></div><span>Claude Code가 작업 시작할 때 <strong>자동으로 읽음</strong></span></li> <li><div class="dot o"></div><span><strong>한 번 써두면</strong> 매번 설명 안 해도 됨</span></li> <li><div class="dot o"></div><span>팀 규칙, 내 직무, 자주 쓰는 용어 모두 담기</span></li> </ul> </div> <div class="key-line mt-0"> 이게 있으면 매 대화마다 설명 안 해도 돼요 </div> </div> <!-- 우: 예시 카드 --> <div class="row stack g-10"> <div class="fs-tiny fg-dimmer fw-700 ls-wide4 t-upper mb-2">이런 내용을 넣어요</div> <div class="card bg-surface2"> <div class="card-title">규칙</div> <div class="row flex-wrap g-8 mt-6"> <span class="bg-warn fs-body fg-orange fw-600 r-pill bd-orange" style="padding:6px 14px;">한국어로 답하기</span> <span class="bg-warn fs-body fg-orange fw-600 r-pill bd-orange" style="padding:6px 14px;">수정 전 먼저 보여주기</span> <span class="bg-warn fs-body fg-orange fw-600 r-pill bd-orange" style="padding:6px 14px;">위험 작업 사전 고지</span> </div> </div> <div class="card bg-surface2"> <div class="card-title">내 직무·팀</div> <p class="fs-body fg-dim mt-4">프로덕트 디자이너 · 개발팀·데이터팀과 협업</p> </div> <div class="card bg-surface2"> <div class="card-title">자주 쓰는 용어</div> <div class="row stack g-4 mt-4"> <span class="fs-body fg-dim">AIP <span class="fg-dimmer">= AI 프레젠테이션 기능</span></span> <span class="fs-body fg-dim">VOC <span class="fg-dimmer">= 사용자 의견 수집</span></span> </div> </div> </div> </div> </div>
+</div> <div class="slide slide-pad" id="mid-3"> <div class="w-full mw-content"> <div class="anim" style="margin-bottom:22px;"> <div class="eyebrow">memory/</div> <h2>Claude의 <span class="highlight">장기 기억</span> 만들기</h2> </div> <div class="two-col anim ai-center" style="gap:32px;"> <!-- 좌: 개념 --> <div class="row stack g-12"> <div class="card "> <div class="card-title">왜 memory 폴더가 필요한가요?</div> <ul class="list"> <li><div class="dot o"></div><span>CLAUDE.md가 길어지면 나눠서 관리</span></li> <li><div class="dot o"></div><span>주제별 파일로 분리<br> <span class="fs-body fg-orange fw-600 ff-mono">mem_product.md / mem_okr.md / mem_feedback.md</span> </span></li> <li><div class="dot o"></div><span>CLAUDE.md에서 <strong>인덱스만 유지</strong>, 상세는 각 파일에</span></li> <li><div class="dot o"></div><span>필요한 파일만 불러오니까 <strong>토큰 절약</strong>도 됨</span></li> </ul> </div> <div class="key-line mt-0"> 오늘의 대화가 내일의 자산이 되는 구조 </div> </div> <!-- 우: 메모리 파일 카드 --> <div class="row stack g-10"> <div class="fs-tiny fg-dimmer fw-700 ls-wide4 t-upper mb-2">파일별 역할</div> <div class="row stack g-8"> <div class="row ai-center g-14 bg-surface2 r-10 bd pad-12-16"> <div class="bg-warn row ai-center jc-center fs-body r-8 bd-orange flex-shrink-0 sq-36">📋</div> <div> <div class="fs-body fw-700 fg-ink">제품 정책</div> <div class="fs-body-sm fg-dim">기능 스펙, 방향, 제약 사항</div> </div> </div> <div class="row ai-center g-14 bg-surface2 r-10 bd pad-12-16"> <div class="bg-warn row ai-center jc-center fs-body r-8 bd-orange flex-shrink-0 sq-36">🎯</div> <div> <div class="fs-body fw-700 fg-ink">목표·지표</div> <div class="fs-body-sm fg-dim">현재 OKR, 성과 지표</div> </div> </div> <div class="row ai-center g-14 bg-surface2 r-10 bd pad-12-16"> <div class="bg-warn row ai-center jc-center fs-body r-8 bd-orange flex-shrink-0 sq-36">💬</div> <div> <div class="fs-body fw-700 fg-ink">피드백 기록</div> <div class="fs-body-sm fg-dim">리뷰 방향, 반영 원칙</div> </div> </div> <div class="row ai-center g-14 bg-surface2 r-10 bd pad-12-16"> <div class="bg-warn row ai-center jc-center fs-body r-8 bd-orange flex-shrink-0 sq-36">📝</div> <div> <div class="fs-body fw-700 fg-ink">작업 로그</div> <div class="fs-body-sm fg-dim">세션별 진행 내역</div> </div> </div> </div> </div> </div> </div>
+</div> <div class="slide slide-pad" id="mid-4"> <div class="w-full mw-content"> <div class="anim" style="margin-bottom:22px;"> <div class="eyebrow">슬래시 커맨드</div> <h2>자주 쓰는 작업을 <span class="highlight">1초</span>로</h2> </div> <div class="two-col anim ai-center" style="gap:32px;"> <!-- 좌: 개념 --> <div class="row stack g-12"> <div class="card "> <div class="card-title">어떻게 작동하나요?</div> <ul class="list"> <li><div class="dot o"></div><span><strong>/</strong>로 시작하는 단축 명령어</span></li> <li><div class="dot o"></div><span><span class="fg-orange fw-600 ff-mono">.claude/commands/</span> 폴더에 .md 파일로 등록</span></li> <li><div class="dot o"></div><span>복잡한 프롬프트를 <strong>단어 하나로 압축</strong></span></li> <li><div class="dot o"></div><span>한 번 만들면 <strong>팀 전체가 씀</strong>. 지식 자산화</span></li> </ul> </div> <div class="key-line mt-0"> 한 번 만들면 팀 전체가 씀. 지식 자산화 </div> </div> <!-- 우: 실제 예시 --> <div class="row stack g-10"> <div class="fs-tiny fg-dimmer fw-700 ls-wide4 t-upper mb-2">실전 예시</div> <div class="row stack g-8 "> <div class="card row ai-center g-14"> <div class="fs-lead fw-800 fg-orange ff-mono flex-shrink-0">/weekly-report</div> <div class="flex-shrink-0 bg-border" style="width:1px; height:28px;"></div> <p class="fs-body fg-dim m-0">매주 작성하는 보고서 자동 생성</p> </div> <div class="card row ai-center g-14"> <div class="fs-lead fw-800 fg-orange ff-mono flex-shrink-0">/review</div> <div class="flex-shrink-0 bg-border" style="width:1px; height:28px;"></div> <p class="fs-body fg-dim m-0">파일 검토 + 이슈 리스트 자동 작성</p> </div> <div class="card row ai-center g-14"> <div class="fs-lead fw-800 fg-orange ff-mono flex-shrink-0">/deploy</div> <div class="flex-shrink-0 bg-border" style="width:1px; height:28px;"></div> <p class="fs-body fg-dim m-0">빌드 + 배포 + 슬랙 알림 한 번에</p> </div> <div class="card row ai-center g-14"> <div class="fs-lead fw-800 fg-orange ff-mono flex-shrink-0">/meeting-notes</div> <div class="flex-shrink-0 bg-border" style="width:1px; height:28px;"></div> <p class="fs-body fg-dim m-0">회의록 정리 + Confluence 업로드</p> </div> </div> </div> </div> </div>
+</div> <div class="slide slide-pad" id="mid-5">
+
+  <div class="w-full mw-content">
+
+    <div class="anim t-center mb-20">
+      <div class="eyebrow">훅 (Hook)</div>
+      <h2>특정 시점에 <span class="highlight">자동으로 실행</span></h2>
+      <p class="lead t-center fs-title-sm" style="max-width:640px; margin:10px auto 0;">
+        특정 이벤트(저장, 작업 완료)에 코드가 <strong>자동 실행</strong>돼요
+      </p>
+    </div>
+
+    <div class="cols-3 anim g-16 mb-16">
+
+      <!-- PreToolUse -->
+      <div class="card" style="border-top:3px solid #7e22ce;">
+        <div class="card-title fg-info">실행 전 훅</div>
+        <h3 class="fs-title mb-8 fw-800 ls-tight2">파일 수정 <em class="fg-orange" style="font-style:normal;">전</em></h3>
+        <p>Claude가 파일을 바꾸기 직전에 자동으로 백업을 만들어요. 실수해도 원본이 보존돼요.</p>
+        <div class="mt-12 bg-surface2 fs-body fg-dim r-6 ff-mono pad-8-12">
+          툴 실행 전 → 파일 수정 → 자동 백업
+        </div>
+      </div>
+
+      <!-- PostToolUse -->
+      <div class="card" style="border-top:3px solid #1d4ed8;">
+        <div class="card-title fg-info">실행 후 훅</div>
+        <h3 class="fs-title mb-8 fw-800 ls-tight2">코드 작성 <em class="fg-orange" style="font-style:normal;">후</em></h3>
+        <p>Claude가 코드를 작성하고 나면 자동으로 린트·테스트가 돌아가요. 사람이 직접 실행 안 해도 돼요.</p>
+        <div class="mt-12 bg-surface2 fs-body fg-dim r-6 ff-mono pad-8-12">
+          툴 실행 후 → 자동 린트·테스트
+        </div>
+      </div>
+
+      <!-- Stop -->
+      <div class="card" style="border-top:3px solid var(--orange);">
+        <div class="card-title fg-orange">종료 훅</div>
+        <h3 class="fs-title mb-8 fw-800 ls-tight2">작업 완료 <em class="fg-orange" style="font-style:normal;">후</em></h3>
+        <p>Claude의 작업이 끝나면 자동으로 슬랙 알림을 보내요. 기다리다가 놓치는 일이 없어요.</p>
+        <div class="mt-12 bg-surface2 fs-body fg-dim r-6 ff-mono pad-8-12">
+          종료 → 슬랙 자동 알림 발송
+        </div>
+      </div>
+
+    </div>
+
+    <div class="anim">
+      <div class="key-line t-center">
+        슬래시 커맨드가 '시작' 트리거라면, 훅은 '자동' 트리거
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div class="slide slide-pad" id="mid-6"> <div class="w-full mw-content"> <div class="anim mb-18"> <div class="eyebrow">서브에이전트</div> <h2><span class="highlight">전문가 팀</span>을 띄우는 법</h2> </div> <div class="two-col anim ai-center" style="gap:28px;"> <!-- 좌: 개념 + 비유 --> <div class="row stack g-12"> <div class="card "> <div class="card-title">개념</div> <ul class="list"> <li><div class="dot o"></div><span>하나의 Claude가 다 하는 게 아니라, <strong>작업별 전문 Claude</strong>를 띄움</span></li> <li><div class="dot o"></div><span><strong>병렬 실행</strong> → 시간 단축</span></li> <li><div class="dot o"></div><span>각자 <strong>독립 맥락</strong>으로 더 정확</span></li> </ul> </div> <!-- 구조 설명 --> <div class="bg-warn r-10 bd-15-orange" style="padding:14px;"> <div class="fs-title fw-700 fg-ink mb-4 ls-tight1">구조</div> <div class="fs-body fg-dim lh-16">오케스트레이터 Claude가 서브에이전트를 지시·조율. 각 서브에이전트는 독립 맥락으로 실행.</div> </div> </div> <!-- 우: 실전 예시 --> <div class="row stack g-10"> <div class="fs-tiny fg-dimmer fw-700 ls-wide4 t-upper mb-2">실전 예시</div> <div class="card "> <div class="card-title">문서 작업 자동화</div> <div class="row g-8 ai-center flex-wrap"> <div class="bg-warn fs-body fw-700 fg-orange bd-orange pad-8-12" style="border-radius:7px;">리서치 에이전트</div> <div class="fg-dimmer fs-body">+</div> <div class="fs-body fw-700 fg-dim pad-8-12 bg-surface2" style="border-radius:7px; border:1px solid var(--border2);">문서화 에이전트</div> <div class="fg-dimmer fs-body">+</div> <div class="fs-body fw-700 fg-dim pad-8-12 bg-surface2" style="border-radius:7px; border:1px solid var(--border2);">검토 에이전트</div> </div> <p class="fs-body fg-dimmer mt-8">→ 동시 실행으로 대기 시간 단축</p> </div> <div class="card "> <div class="card-title">개발 자동화</div> <div class="row g-8 ai-center flex-wrap"> <div class="bg-warn fs-body fw-700 fg-orange bd-orange pad-8-12" style="border-radius:7px;">코드 작성</div> <div class="fg-dimmer fs-body">+</div> <div class="fs-body fw-700 fg-dim pad-8-12 bg-surface2" style="border-radius:7px; border:1px solid var(--border2);">테스트 작성</div> <div class="fg-dimmer fs-body">+</div> <div class="fs-body fw-700 fg-dim pad-8-12 bg-surface2" style="border-radius:7px; border:1px solid var(--border2);">배포 준비</div> </div> <p class="fs-body fg-dimmer mt-8">→ 병렬 진행으로 대기 시간 제거</p> </div> <div class="key-line mt-0"> 이걸 쓰기 시작하면 일하는 속도가 다름 </div> </div> </div> </div>
+</div> <div class="slide" id="mid-7" style="padding: 24px 72px;"> <div class="w-full mw-content"> <div class="anim mb-20"> <div class="eyebrow">비용 관리</div> <h2>쓴 만큼만 내는 법</h2> </div> <div class="two-col anim ai-center" style="gap:28px;"> <!-- 좌: 구조 이해 --> <div class="row stack g-10"> <div class="card "> <div class="card-title">구조 이해</div> <ul class="list"> <li><div class="dot"></div><span><strong>입력 토큰 + 출력 토큰</strong> = 비용</span></li> <li><div class="dot"></div><span>CLAUDE.md가 길면 <strong>매번 읽으니 비용 증가</strong></span></li> <li><div class="dot"></div><span>서브에이전트 많이 쓸수록 증가</span></li> <li><div class="dot"></div> <span> <strong>Pro ($20/월)</strong> — 사용량 제한 있음<br> <strong>API</strong> — 종량제, 쓴 만큼만 </span> </li> </ul> </div> <!-- 모델 비교 --> <div class="card bg-surface2"> <div class="card-title">모델별 용도 구분</div> <div class="row stack g-6"> <div class="row ai-center g-10"> <div class="fs-tiny fw-700 fg-dim t-center r-6 pad-4-10 bg-surface2" style="min-width:60px; border:1px solid var(--border2);">Haiku</div> <div class="fs-body fg-dim">반복·파이프라인 (가장 저렴)</div> </div> <div class="row ai-center g-10"> <div class="bg-warn fs-tiny fw-700 fg-orange t-center r-6 bd-orange pad-4-10" style="min-width:60px;">Sonnet</div> <div class="fs-body fg-dim">기본 작업 (기본값)</div> </div> <div class="row ai-center g-10"> <div class="fs-tiny fw-700 fg-dimmer t-center r-6 pad-4-10" style="background:var(--surface2); border:1px solid var(--border2); min-width:60px;">Opus</div> <div class="fs-body fg-dim">설계·아키텍처 (고품질 필요 시)</div> </div> </div> </div> </div> <!-- 우: 절약 팁 --> <div class="row stack g-10"> <div class="fs-tiny fg-dimmer fw-700 ls-wide4 t-upper mb-2">절약 팁</div> <div class="card row stack g-10"> <div class="row g-12 ai-start"> <div class="bg-warn row ai-center jc-center fs-body fw-800 fg-orange r-full flex-shrink-0 sq-28 bd-15-orange">1</div> <div> <div class="fs-title fw-700 fg-ink ls-tight1 mb-2">memory 파일 인덱스만 유지</div> <div class="fs-body fg-dim">CLAUDE.md에 요약만, 상세는 memory 파일로 분리</div> </div> </div> <div class="w-full bg-border" style="height:1px;"></div> <div class="row g-12 ai-start"> <div class="bg-warn row ai-center jc-center fs-body fw-800 fg-orange r-full flex-shrink-0 sq-28 bd-15-orange">2</div> <div> <div class="fs-title fw-700 fg-ink ls-tight1 mb-2">반복 작업은 파이프라인으로</div> <div class="fs-body fg-dim">Haiku로 돌리면 Sonnet의 1/5 비용</div> </div> </div> <div class="w-full bg-border" style="height:1px;"></div> <div class="row g-12 ai-start"> <div class="bg-warn row ai-center jc-center fs-body fw-800 fg-orange r-full flex-shrink-0 sq-28 bd-15-orange">3</div> <div> <div class="fs-title fw-700 fg-ink ls-tight1 mb-2">대화 내역 지워서 토큰 절약</div> <div class="fs-body fg-dim">쌓인 대화 내역이 비용을 올려요</div> </div> </div> <div class="w-full bg-border" style="height:1px;"></div> <div class="row g-12 ai-start"> <div class="bg-warn row ai-center jc-center fs-body fw-800 fg-orange r-full flex-shrink-0 sq-28 bd-15-orange">4</div> <div> <div class="fs-title fw-700 fg-ink ls-tight1 mb-2">반복 대화 비용 절감</div> <div class="fs-body fg-dim">같은 내용 반복 전송 시 비용이 줄어요</div> </div> </div> </div> </div> </div> </div>
+</div> <div class="slide slide-pad" id="mid-8"> <div class="w-full mw-content"> <div class="anim mb-18"> <div class="eyebrow">파이프라인</div> <h2>반복 → 파이프라인 — <span class="highlight">다시는 손 안 대는 구조</span></h2> </div> <div class="two-col anim ai-center" style="gap:28px;"> <!-- 좌: 설명 --> <div class="row stack g-12"> <div class="card "> <div class="card-title">파이프라인이란?</div> <ul class="list"> <li><div class="dot o"></div><span>매주·매일 하는 <strong>같은 작업을 자동화</strong>한 스크립트</span></li> <li><div class="dot o"></div><span>한 번 만들면 <strong>Claude Code가 혼자 실행</strong></span></li> <li><div class="dot o"></div><span><strong>로그도 자동</strong>으로 남김</span></li> <li><div class="dot o"></div><span>Haiku 모델로 돌리면 <strong>비용도 최소화</strong></span></li> </ul> </div> <div class="key-line mt-0"> 첫 번째 파이프라인을 만들면 나머지는 쉬워요 </div> </div> <!-- 우: 실전 예시 --> <div class="row stack g-10"> <div class="fs-tiny fg-dimmer fw-700 ls-wide4 t-upper mb-2">실전 예시</div> <!-- 예시 1 --> <div class="card bd-l-orange"> <div class="row ai-center jc-between mb-8"> <div class="card-title m-0">매주 자동</div> <div class="bg-warn fs-tiny fw-700 fg-orange r-pill bd-orange pad-3-10">주간</div> </div> <div class="row ai-center g-6 flex-wrap"> <span class="fs-body-sm bg-surface2 fg-dim r-5 pad-4-8">VOC 수집</span> <span class="fg-dimmer fs-caption">→</span> <span class="fs-body-sm bg-surface2 fg-dim r-5 pad-4-8">분류</span> <span class="fg-dimmer fs-caption">→</span> <span class="fs-body-sm bg-surface2 fg-dim r-5 pad-4-8">요약</span> <span class="fg-dimmer fs-caption">→</span> <span class="fs-body-sm bg-warn fg-orange fw-600 bd-orange r-5 pad-4-8">Confluence</span> </div> </div> <!-- 예시 2 --> <div class="card bd-l-orange"> <div class="row ai-center jc-between mb-8"> <div class="card-title m-0">매일 자동</div> <div class="bg-warn fs-tiny fw-700 fg-orange r-pill bd-orange pad-3-10">매일</div> </div> <div class="row ai-center g-6 flex-wrap"> <span class="fs-body-sm bg-surface2 fg-dim r-5 pad-4-8">경쟁사 추적</span> <span class="fg-dimmer fs-caption">→</span> <span class="fs-body-sm bg-surface2 fg-dim r-5 pad-4-8">신기능 감지</span> <span class="fg-dimmer fs-caption">→</span> <span class="fs-body-sm bg-warn fg-orange fw-600 bd-orange r-5 pad-4-8">슬랙 알림</span> </div> </div> <!-- 예시 3 --> <div class="card bd-l-orange"> <div class="row ai-center jc-between mb-8"> <div class="card-title m-0">매월 자동</div> <div class="bg-warn fs-tiny fw-700 fg-orange r-pill bd-orange pad-3-10">MONTHLY</div> </div> <div class="row ai-center g-6 flex-wrap"> <span class="fs-body-sm bg-surface2 fg-dim r-5 pad-4-8">데이터 정제</span> <span class="fg-dimmer fs-caption">→</span> <span class="fs-body-sm bg-surface2 fg-dim r-5 pad-4-8">리포트 생성</span> <span class="fg-dimmer fs-caption">→</span> <span class="fs-body-sm bg-warn fg-orange fw-600 bd-orange r-5 pad-4-8">이메일 발송</span> </div> </div> </div> </div> </div>
+</div> <div class="slide slide-pad" id="mid-9">
+
+  <div class="w-full mw-content">
+
+    <div class="anim t-center" style="margin-bottom:22px;">
+      <div class="eyebrow">협업 패턴</div>
+      <h2>좋은 AI 협업의 <span class="highlight">황금 패턴</span></h2>
+    </div>
+
+    <!-- 3단계 흐름 -->
+    <div class="anim ai-stretch grid mb-18" style="grid-template-columns:1fr 32px 1fr 32px 1fr; gap:0;">
+
+      <!-- Explore -->
+      <div class="bg-surface t-center row stack ai-center g-10 r-14" style="border:2px solid var(--border); padding:22px 18px;">
+        <div class="fs-lead fg-ink ls-tight2 fw-900">전체 파악</div>
+        <p class="fs-body fg-dim t-left lh-16">먼저 파악하게 해요.<br><br>
+          <span class="fg-orange fs-body-sm fw-600 ff-mono">
+            "이 폴더 구조<br>파악해줘"
+          </span>
+        </p>
+        <div class="bg-surface2 fs-body fg-dimmer mt-auto r-6 bd pad-6-12">방향 설정 전 필수</div>
+      </div>
+
+      <!-- 화살표 -->
+      <div class="row ai-center jc-center">
+        <div style="width:0; height:0; border-top:10px solid transparent; border-bottom:10px solid transparent; border-left:14px solid var(--orange-br);"></div>
+      </div>
+
+      <!-- Plan -->
+      <div class="bg-warn t-center row stack ai-center g-10 r-14 bd-2-orange" style="padding:22px 18px;">
+        <div class="fs-lead fg-orange ls-tight2 fw-900">Plan</div>
+        <p class="fs-body fg-dim t-left lh-16">계획 먼저 받아요.<br><br>
+          <span class="fg-orange fs-body-sm fw-600 ff-mono">
+            "실행 전에 어떻게<br>할지 보여줘"
+          </span>
+        </p>
+        <div class="fs-body-sm fg-orange fw-700 mt-auto r-6 bd-orange pad-6-12" style="background:rgba(255,255,255,0.7);">가장 중요한 단계</div>
+      </div>
+
+      <!-- 화살표 -->
+      <div class="row ai-center jc-center">
+        <div style="width:0; height:0; border-top:10px solid transparent; border-bottom:10px solid transparent; border-left:14px solid var(--orange-br);"></div>
+      </div>
+
+      <!-- Implement -->
+      <div class="bg-surface t-center row stack ai-center g-10 r-14" style="border:2px solid var(--border); padding:22px 18px;">
+        <div class="fs-lead fg-ink ls-tight2 fw-900">Implement</div>
+        <p class="fs-body fg-dim t-left lh-16">확인 후 실행.<br><br>
+          <span class="fg-orange fs-body-sm fw-600 ff-mono">
+            "이제 해줘"
+          </span>
+        </p>
+        <div class="bg-surface2 fs-body fg-dimmer mt-auto r-6 bd pad-6-12">Git 병행 필수</div>
+      </div>
+
+    </div>
+
+    <!-- 왜 중요한가 + key-line -->
+    <div class="anim g-12 grid grid-2">
+      <div class="card bg-surface2">
+        <p class="fs-body fg-dim lh-16">바로 실행시키면 방향이 틀릴 때 <strong>되돌리기 어려움</strong>. Plan 단계에서 방향 수정이 훨씬 저렴해요.</p>
+      </div>
+      <div class="key-line mt-0 fs-body">
+        Plan 단계에서 방향을 먼저 잡으면 나중에 되돌리는 일이 줄어들어요. Git과 병행하면 더 안전합니다.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<div class="slide slide-pad" id="mid-10"> <div class="w-full mw-content"> <div class="anim mb-20"> <div class="eyebrow">Git</div> <h2>항상 돌아올 수 있는 <span class="highlight">안전망</span></h2> </div> <div class="two-col anim ai-center" style="gap:28px;"> <!-- 좌: 개념 --> <div class="row stack g-12"> <div class="card "> <div class="card-title">비개발자도 이해할 수 있는 Git</div> <div class="row g-14 ai-start bg-warn mb-12 r-8 bd-orange" style="padding:14px;"> <div> <div class="fs-body-sm fw-800 fg-ink mb-4">Git = 구글 문서의 버전 히스토리</div> <p class="fs-body fg-dim lh-16">Claude Code가 무언가 바꾸기 전에 커밋 → 실수해도 그 시점으로 돌아갈 수 있어요</p> </div> </div> <ul class="list"> <li><div class="dot o"></div><span><strong>커밋</strong> = 현재 상태 저장 (스냅샷)</span></li> <li><div class="dot o"></div><span><strong>reset</strong> = 이전 커밋으로 되돌리기</span></li> </ul> </div> </div> <!-- 우: 실천 루틴 --> <div class="row stack g-10"> <div class="fs-tiny fg-dimmer fw-700 ls-wide4 t-upper mb-2">실천 루틴</div> <div class="row stack g-8 "> <div class="row g-12 ai-start"> <div class="step-badge">1</div> <div class="min-w-0"> <div class="fs-title fw-700 fg-ink mb-4 ls-tight1">작업 전: 백업 커밋</div> <div class="code-box fs-body-sm pad-10-14">git add . && git commit -m <span class="c-val">"작업 전 백업"</span></div> </div> </div> <div class="row g-12 ai-start"> <div class="step-badge">2</div> <div class="min-w-0"> <div class="fs-title fw-700 fg-ink mb-4 ls-tight1">Claude Code 작업 진행</div> <div class="bg-surface2 fs-body fg-dim pad-10-14" style="border-radius:7px;">Claude가 알아서 처리해요</div> </div> </div> <div class="row g-12 ai-start"> <div class="step-badge">3</div> <div class="min-w-0"> <div class="fs-title fw-700 fg-ink mb-4 ls-tight1">결과 확인 후 커밋</div> <div class="code-box fs-body-sm pad-10-14">git commit -m <span class="c-val">"Claude: [작업 내용]"</span></div> </div> </div> <div class="row g-12 ai-start"> <div class="step-badge" style="background:var(--red);">4</div> <div class="min-w-0"> <div class="fs-body-sm fw-700 fg-bad mb-4">망했으면: 되돌리기</div> <div class="code-box fs-body-sm pad-10-14">git reset --hard HEAD~1</div> </div> </div> </div> <!-- 경고 박스 --> <div class="r-8 pad-12-16" style="background:#fef2f2; border:1.5px solid #fca5a5; border-left:4px solid var(--red);"> <div class="fs-body-sm fg-bad fw-700 lh-16"> 처음엔 테스트 폴더에서 연습하세요.<br> <span class="fw-400 fg-bad">Git 익숙해지면 전체 프로젝트에 적용</span> </div> </div> </div> </div> </div>
+</div>
+
+<div class="slide w-full row stack h-full ov-hidden" id="mid-11" style="padding: 36px 40px; gap:20px; justify-content:flex-start;">
+
+  <!-- 헤더 -->
+  <div class="t-center anim">
+    <div class="fs-body-sm fw-700 fg-orange mb-8 t-upper ls-wide5">중급 마무리</div>
+    <h2 class="fs-display fw-800 fg-ink kw m-0 ls-tight2">중급 <span class="highlight">체크리스트</span></h2>
+    <p class="fs-body fg-dim kw mt-8" style="margin:8px 0 0;">이걸 다 쓰는 사람은 많지 않습니다 — 오늘 1개만 추가가 목표예요</p>
+  </div>
+
+  <!-- 6개 + 1개 강조 체크 카드 -->
+  <div class="anim grid grid-2" style="gap:14px; flex:1; min-height:0; align-items:stretch;">
+
+    <div class="row ai-center g-12 bg-surface bd r-12" style="padding:14px 18px;">
+      <div class="row ai-center jc-center r-8 flex-shrink-0" style="width:24px;height:24px;border:2px solid var(--border2);">
+        <span class="fg-orange fw-800" style="font-size:14px;">✓</span>
+      </div>
+      <span class="fs-body fg-ink kw lh-15">CLAUDE.md 만들어서 쓰고 있다</span>
+    </div>
+
+    <div class="row ai-center g-12 bg-surface bd r-12" style="padding:14px 18px;">
+      <div class="row ai-center jc-center r-8 flex-shrink-0" style="width:24px;height:24px;border:2px solid var(--border2);">
+        <span class="fg-orange fw-800" style="font-size:14px;">✓</span>
+      </div>
+      <span class="fs-body fg-ink kw lh-15">memory/ 폴더로 나눠서 관리한다</span>
+    </div>
+
+    <div class="row ai-center g-12 bg-surface bd r-12" style="padding:14px 18px;">
+      <div class="row ai-center jc-center r-8 flex-shrink-0" style="width:24px;height:24px;border:2px solid var(--border2);">
+        <span class="fg-orange fw-800" style="font-size:14px;">✓</span>
+      </div>
+      <span class="fs-body fg-ink kw lh-15">자주 쓰는 작업에 슬래시 커맨드 하나 만들었다</span>
+    </div>
+
+    <div class="row ai-center g-12 bg-surface bd r-12" style="padding:14px 18px;">
+      <div class="row ai-center jc-center r-8 flex-shrink-0" style="width:24px;height:24px;border:2px solid var(--border2);">
+        <span class="fg-orange fw-800" style="font-size:14px;">✓</span>
+      </div>
+      <span class="fs-body fg-ink kw lh-15">훅 한 개 이상 쓰고 있다</span>
+    </div>
+
+    <div class="row ai-center g-12 bg-surface bd r-12" style="padding:14px 18px;">
+      <div class="row ai-center jc-center r-8 flex-shrink-0" style="width:24px;height:24px;border:2px solid var(--border2);">
+        <span class="fg-orange fw-800" style="font-size:14px;">✓</span>
+      </div>
+      <span class="fs-body fg-ink kw lh-15">Explore → Plan → Implement 패턴 쓴다</span>
+    </div>
+
+    <div class="row ai-center g-12 bg-surface bd r-12" style="padding:14px 18px;">
+      <div class="row ai-center jc-center r-8 flex-shrink-0" style="width:24px;height:24px;border:2px solid var(--border2);">
+        <span class="fg-orange fw-800" style="font-size:14px;">✓</span>
+      </div>
+      <span class="fs-body fg-ink kw lh-15">Git으로 작업 전 커밋한다</span>
+    </div>
+
+    <!-- 강조 (전체 너비) -->
+    <div class="row ai-center g-12 bg-warn bd-2-orange r-12" style="grid-column:1 / -1; padding:14px 18px;">
+      <div class="row ai-center jc-center r-8 flex-shrink-0 bg-orange" style="width:24px;height:24px;">
+        <span class="fg-white fw-800" style="font-size:14px;">★</span>
+      </div>
+      <span class="fs-body fw-800 fg-orange kw lh-15">반복 작업 하나를 파이프라인으로 만들었다</span>
+    </div>
+
+  </div>
+
+  <!-- key-line -->
+  <div class="key-line t-center fs-body fw-700 kw r-12 anim" style="padding:12px 24px;">
+    이걸 <span class="fg-orange">다 안 해도 돼요</span> — 오늘 <span class="fg-orange">1개만 추가</span>하는 게 목표예요
+  </div>
+
+</div>
+</div>
+
+
+<div class="slide p-0 ai-center" id="adv-0">
+  <svg class="w-full pos-abs inset-0 h-full pe-none" aria-hidden="true" preserveAspectRatio="xMidYMid slice" style="opacity:0.12;" viewBox="0 0 1200 700">
+    <circle cx="600" cy="350" fill="none" r="320" stroke="#c96500" stroke-dasharray="10 7" stroke-width="2.5"></circle>
+    <circle cx="600" cy="350" fill="none" r="210" stroke="#c96500" stroke-width="2"></circle>
+    <circle cx="600" cy="350" fill="none" r="110" stroke="#c96500" stroke-width="1.5"></circle>
+  </svg>
+  <div class="t-center pos-rel" style="max-width:800px;">
+    <div class="eyebrow anim mb-16">Part 3</div>
+    <h1 class="anim ls-tight3 fs-hero-xl" style="line-height:1.0; margin:0 0 28px;">고급</h1>
+    <p class="lead anim t-center fg-dim fs-title" style="max-width:640px; margin:0 auto 32px;">도구가 아니라 사고체계</p>
+    <div class="anim row g-10 flex-wrap jc-center">
+      <div class="bg-surface fs-body fg-dim fw-600 r-pill bd pad-10-18">중급 개념 사용 경험</div>
+      <div class="bg-warn fs-body fg-orange fw-700 r-pill bd-orange pad-10-18">관점 전환이 필요한 사람</div>
+    </div>
+  </div>
+<div class="chapter-lounge"><span class="cl-icon">#</span>막힐 때는 슬랙 <a class="cl-link" href="https://miridih.slack.com/archives/C0AUZDBKGLW" target="_blank">ax_라운지</a> 채널에 편하게 물어보세요</div>
+</div>
+
+
+<div class="slide w-full row stack h-full ov-hidden" id="adv-1" style="padding: 36px 40px; gap:18px; justify-content:flex-start;">
+
+  <!-- 헤더 -->
+  <div class="t-center">
+    <div class="eyebrow anim">역할 분리</div>
+    <h2 class="anim fs-display fw-800 fg-ink kw m-0 ls-tight2">판단은 <span class="highlight">사람</span>, 실행은 <span class="highlight">AI</span></h2>
+  </div>
+
+  <!-- 좌·우 카드 -->
+  <div class="grid grid-2 anim" style="gap:24px; flex:1; min-height:0; align-items:stretch;">
+
+    <!-- 좌: 당신의 영역 -->
+    <div class="bg-warn bd-2-orange row stack r-14" style="padding:22px 26px; gap:12px;">
+      <div class="fs-body-sm fg-orange fw-700 t-upper ls-wide5">당신의 영역</div>
+      <h3 class="fw-800 fg-ink kw lh-12 ls-tight2 m-0" style="font-size:clamp(24px,30px,34px);">판단 · 방향 · 이해관계</h3>
+      <div class="row stack g-8" style="margin-top:4px;">
+        <div class="row ai-center g-12 bg-surface r-10 bd-orange" style="padding:10px 14px;">
+          <div class="bg-warn row ai-center jc-center fs-body-sm fw-800 fg-orange r-8 bd-orange flex-shrink-0" style="width:36px;height:36px;">왜</div>
+          <div class="fs-body fg-dim kw lh-16">이걸 왜 만드는가</div>
+        </div>
+        <div class="row ai-center g-12 bg-surface r-10 bd-orange" style="padding:10px 14px;">
+          <div class="bg-warn row ai-center jc-center fs-body-sm fw-800 fg-orange r-8 bd-orange flex-shrink-0" style="width:36px;height:36px;">언제</div>
+          <div class="fs-body fg-dim kw lh-16">지금이 맞는 타이밍인가</div>
+        </div>
+        <div class="row ai-center g-12 bg-surface r-10 bd-orange" style="padding:10px 14px;">
+          <div class="bg-warn row ai-center jc-center fs-body-sm fw-800 fg-orange r-8 bd-orange flex-shrink-0" style="width:36px;height:36px;">뭘</div>
+          <div class="fs-body fg-dim kw lh-16">어떤 결과물을 원하는가</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 우: AI의 영역 -->
+    <div class="bg-surface2 bd row stack r-14" style="padding:22px 26px; gap:12px;">
+      <div class="fs-body-sm fg-dimmer fw-700 t-upper ls-wide5">AI의 영역</div>
+      <h3 class="fw-800 fg-ink kw lh-12 ls-tight2 m-0" style="font-size:clamp(24px,30px,34px);">실행 · 생성 · 반복처리</h3>
+      <div class="row stack g-8" style="margin-top:4px;">
+        <div class="row ai-center g-12 bg-surface r-10 bd" style="padding:10px 14px;">
+          <div class="bg-surface2 row ai-center jc-center fs-body-sm fw-800 fg-dim r-8 bd flex-shrink-0" style="width:36px;height:36px;">어떻</div>
+          <div class="fs-body fg-dim kw lh-16">어떻게 — 실행 방법</div>
+        </div>
+        <div class="row flex-wrap g-6">
+          <span class="fs-body-sm bg-surface fg-dim fw-600 r-pill bd" style="padding:5px 12px;">작성</span>
+          <span class="fs-body-sm bg-surface fg-dim fw-600 r-pill bd" style="padding:5px 12px;">코딩</span>
+          <span class="fs-body-sm bg-surface fg-dim fw-600 r-pill bd" style="padding:5px 12px;">정리</span>
+          <span class="fs-body-sm bg-surface fg-dim fw-600 r-pill bd" style="padding:5px 12px;">검색</span>
+          <span class="fs-body-sm bg-surface fg-dim fw-600 r-pill bd" style="padding:5px 12px;">요약</span>
+          <span class="fs-body-sm bg-surface fg-dim fw-600 r-pill bd" style="padding:5px 12px;">반복</span>
+          <span class="fs-body-sm bg-surface fg-dim fw-600 r-pill bd" style="padding:5px 12px;">병렬 처리</span>
+          <span class="fs-body-sm bg-surface fg-dim fw-600 r-pill bd" style="padding:5px 12px;">형식 변환</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- key-line -->
+  <div class="key-line t-center fs-body fw-700 kw r-12" style="padding:12px 24px;">
+    '어떻게'에 시간 쓰지 마세요. 그건 <span class="fg-orange">AI 몫</span>이에요
+  </div>
+
+</div>
+
+
+<div class="slide p-0" id="adv-2"> <div class="row stack ai-center jc-center pos-abs inset-0" style="padding:0 80px; gap:0;"> <div class="row stack h-full" style="justify-content:space-evenly; padding:32px 0;"> <!-- 헤더 --> <div class="t-center"> <div class="eyebrow anim">AI-First 기획</div> <h2 class="anim fs-display kw"> 빈 문서 앞에서 <span class="highlight">막막하지 않은 법</span> </h2> </div> <!-- Before / After --> <div class="anim g-16 ai-center w-full grid grid-vs"> <div class="r-12 bd-bad bg-bad-soft pad-18-22" style="border-left:4px solid #c0392b;"> <div class="fs-tiny fw-700 fg-bad mb-8 ls-wide6 t-upper">변경 전</div> <p class="fs-lead fg-bad kw lh-17"> 빈 문서 → 혼자 생각 →<br>30분 지나도 첫 줄 못 씀 </p> </div> <div class="row ai-center jc-center bg-surface2 fs-body fw-800 fg-dimmer r-full bd-2 flex-shrink-0" style="width:40px; height:40px;">→</div> <div class="r-12 bd-good bg-good-soft pad-18-22" style="border-left:4px solid #166534;"> <div class="fs-tiny fw-700 fg-good mb-8 ls-wide6 t-upper">변경 후</div> <p class="fs-lead fg-good kw lh-17"> Claude에게 먼저 초안 요청 →<br>10분 안에 80% → 내가 20% 다듬기 </p> </div> </div> <!-- 3원칙 + 실전 프롬프트 --> <div class="g-16 w-full grid grid-2"> <div class="row stack g-10"> <div class="fs-tiny fw-700 fg-dimmer ls-wide6 t-upper">AI-First 기획 3원칙</div> <div class="anim row g-12 bg-surface r-10 bd pad-12-16"> <div class="row ai-center jc-center fs-caption fw-800 fg-white r-full bg-orange flex-shrink-0 sq-24">1</div> <div class="fs-body fg-ink kw lh-16"> <strong>초안은 항상 AI가 먼저</strong><br> <span class="fg-dim">초안 시작점 제공</span> </div> </div> <div class="anim row g-12 bg-surface r-10 bd pad-12-16"> <div class="row ai-center jc-center fs-caption fw-800 fg-white r-full bg-orange flex-shrink-0 sq-24">2</div> <div class="fs-body fg-ink kw lh-16"> <strong>내 역할은 편집자</strong><br> <span class="fg-dim">쓰는 게 아니라 다듬는 것</span> </div> </div> <div class="anim row g-12 bg-surface r-10 bd pad-12-16"> <div class="row ai-center jc-center fs-caption fw-800 fg-white r-full bg-orange flex-shrink-0 sq-24">3</div> <div class="fs-body fg-ink kw lh-16"> <strong>날 것의 생각도 AI에게 먼저</strong><br> <span class="fg-dim">날 것의 생각도 OK</span> </div> </div> </div> <div class="row stack g-10"> <div class="fs-tiny fw-700 fg-dimmer ls-wide6 t-upper">실전 프롬프트</div> <div class="anim bg-warn r-10 bd-orange" style="padding:18px 20px;"> <div class="fs-tiny fw-600 fg-orange mb-10 ls-wide3">프롬프트 예시</div> <p class="fs-body fg-ink kw ff-mono" style="line-height:1.75;"> "나 지금 <span class="fg-orange fw-700">[주제]</span> 기획서 써야 해.<br> 배경은 <span class="fg-orange fw-700">[배경]</span>.<br> 우선 목차부터 잡아줘" </p> </div> <div class="key-line anim mt-0"> 선입견 없는 초안 → 내 판단으로 다듬기.<br>이게 AI-First </div> </div> </div> </div> </div>
+</div> <div class="slide p-0" id="adv-3">
+
+  <div class="row stack ai-stretch jc-center g-20 pos-abs inset-0 slide-pad">
+
+    <!-- 헤더 -->
+    <div class="t-center">
+      <div class="eyebrow anim">품질 검증 루프</div>
+      <h2 class="anim fs-display fw-800 fg-ink kw ls-tight2">
+        AI 결과를 <span class="highlight">AI로 검증하기</span>
+      </h2>
+    </div>
+
+    <!-- 3단계 루프 다이어그램 + 프롬프트 -->
+    <div class="g-20 grid grid-2" style="align-items:start;">
+
+      <!-- 좌: 3단계 루프 -->
+      <div class="row stack g-10">
+        <div class="anim row g-14 bg-surface ai-start r-12 bd pad-16-18">
+          <div class="row ai-center jc-center fs-body-sm fw-800 fg-white r-full bg-orange flex-shrink-0 sq-32">1</div>
+          <div>
+            <div class="fs-caption fw-700 fg-orange mb-4 ls-wide2 t-upper">생성</div>
+            <p class="fs-lead fg-ink kw lh-16">Claude A가 초안 작성</p>
+          </div>
+        </div>
+        <div class="row jc-center" style="padding:2px 0;">
+          <div class="r-pill" style="width:2px; height:18px; background:linear-gradient(to bottom,var(--orange),var(--border2));"></div>
+        </div>
+        <div class="anim row g-14 bg-warn ai-start r-12 bd-2-orange pad-16-18">
+          <div class="row ai-center jc-center fs-body-sm fw-800 fg-white r-full bg-orange flex-shrink-0 sq-32">2</div>
+          <div>
+            <div class="fs-caption fw-700 fg-orange mb-4 ls-wide2 t-upper">검증 (핵심)</div>
+            <p class="fs-lead fg-ink kw lh-16">
+              Claude B가 비판적 리뷰<br>
+              <span class="fg-dimmer" style="font-size:0.9em;">다른 세션, 다른 관점</span>
+            </p>
+          </div>
+        </div>
+        <div class="row jc-center" style="padding:2px 0;">
+          <div class="r-pill" style="width:2px; height:18px; background:linear-gradient(to bottom,var(--orange),var(--border2));"></div>
+        </div>
+        <div class="anim row g-14 bg-surface ai-start r-12 bd pad-16-18">
+          <div class="row ai-center jc-center fs-body-sm fw-800 fg-white r-full fg-white-on-ink flex-shrink-0 sq-32">3</div>
+          <div>
+            <div class="fs-caption fw-700 fg-dim mb-4 ls-wide2 t-upper">개선</div>
+            <p class="fs-lead fg-ink kw lh-16">피드백 반영 → 다시 1로</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 우: 실전 프롬프트 + 주의사항 -->
+      <div class="row stack g-12">
+        <div class="anim bg-warn r-12 bd-orange pad-16-20">
+          <div class="fs-tiny fw-600 fg-orange mb-10 ls-wide3">검증 프롬프트</div>
+          <p class="fs-lead fg-ink kw lh-18 ff-mono">
+            "이 기획서에서 빠진 게 뭔지,<br>논리 구멍은 어딘지,<br>반론 3가지 들어줘"
+          </p>
+        </div>
+        <div class="anim bg-warn r-12 bd-orange pad-16-20">
+          <div class="fs-tiny fw-600 fg-orange mb-10 ls-wide3">비판적 검토 프롬프트</div>
+          <p class="fs-lead fg-ink kw lh-18 ff-mono">
+            "이 결정에 반대하는 입장에서<br>가장 강한 반론 써줘"
+          </p>
+        </div>
+        <div class="anim r-10 bd-bad bg-bad-soft pad-14-18" style="border-left:4px solid #c0392b;">
+          <div class="fs-tiny fw-700 fg-bad mb-6 ls-wide3 t-upper">중요</div>
+          <p class="fs-lead fg-bad kw lh-165">
+            같은 Claude한테 바로 물으면 동의해주려는 경향 있음<br>→ <strong>새 세션에서 물어볼 것</strong>
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="key-line anim t-center mt-0">
+      AI의 첫 답을 믿지 마세요. 한 번 더 검증하는 루프가 품질을 만들어요
+    </div>
+
+  </div>
+</div>
+
+
+<div class="slide p-0" id="adv-4">
+
+  <div class="row stack ai-stretch jc-center pos-abs inset-0 slide-pad" style="gap:22px;">
+
+    <!-- 헤더 -->
+    <div class="t-center">
+      <div class="eyebrow anim">연결의 확장</div>
+      <h2 class="anim fs-display fw-800 fg-ink kw ls-tight2">
+        MCP — Claude를 <span class="highlight">외부 도구와 연결</span>하기
+      </h2>
+      <p class="lead anim fs-body fg-dim mt-8 kw">
+        Model Context Protocol — Claude에게 플러그인처럼 도구를 붙이는 방법
+      </p>
+    </div>
+
+    <!-- 3개 예시 카드 -->
+    <div class="g-16 grid grid-3">
+      <div class="card anim" style="border-top:3px solid var(--orange);">
+        <div class="card-title">Confluence MCP</div>
+        <div class="fs-body fw-700 fg-ink mb-8 kw">Claude가 직접 Confluence 문서 읽고 쓰기</div>
+        <p class="fs-lead fg-dim kw lh-17">
+          페이지 생성·수정·검색을 대화만으로 처리. 수동 복붙 없음.
+        </p>
+      </div>
+      <div class="card anim" style="border-top:3px solid var(--orange);">
+        <div class="card-title">Slack MCP</div>
+        <div class="fs-body fw-700 fg-ink mb-8 kw">Claude가 직접 슬랙에 메시지 발송</div>
+        <p class="fs-lead fg-dim kw lh-17">
+          채널·DM·스레드 작성. 알림 자동화, 리포트 발송 가능.
+        </p>
+      </div>
+      <div class="card anim" style="border-top:3px solid var(--orange);">
+        <div class="card-title">Browser MCP</div>
+        <div class="fs-body fw-700 fg-ink mb-8 kw">Claude가 웹 브라우저 제어</div>
+        <p class="fs-lead fg-dim kw lh-17">
+          스크래핑·폼 자동화·화면 캡처. 반복 업무를 완전 자동화.
+        </p>
+      </div>
+    </div>
+
+    <!-- 설치 + key-line -->
+    <div class="g-16 ai-center grid grid-2">
+      <div class="anim bg-warn r-12 bd-orange pad-16-20">
+        <div class="fs-tiny fw-600 fg-orange mb-8 ls-wide3">설치 방법</div>
+        <p class="fs-body fg-ink kw ff-mono" style="line-height:1.75;">
+          <span class="fg-orange fw-700">.claude/mcp.json</span> 에<br>설정 추가 → Claude 재시작
+        </p>
+      </div>
+      <div>
+        <div class="key-line anim mt-0">
+          MCP — Claude가 외부 세계와 직접 연결돼요
+        </div>
+        <p class="anim fs-body fg-dimmer mt-10 kw">
+          * 아직 공식 MCP 생태계 확장 중. 필요한 것부터 하나씩
+        </p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<div class="slide p-0" id="adv-5"> <div class="row stack ai-center jc-center g-20 pos-abs inset-0 slide-pad"> <!-- 헤더 --> <div class="t-center"> <div class="eyebrow anim">맥락의 자산화</div> <h2 class="anim fs-display fw-800 fg-ink kw ls-tight2"> 오늘의 대화를 <span class="highlight">내일의 자산으로</span> </h2> </div> <div class="g-20 grid grid-2" style="align-items:start;"> <!-- 좌: 핵심 개념 + 레이어 다이어그램 --> <div class="row stack g-12"> <div class="anim bg-surface2 r-12 bd pad-16-20"> <p class="fs-body fg-ink kw" style="line-height:1.75;"> AI와의 대화는 <strong>사라지지 않게 저장</strong>해야 함<br> 잘 된 프롬프트, 좋은 결과물 →<br> CLAUDE.md나 memory에 <strong class="fg-orange">즉시 저장</strong><br> 이게 쌓이면 '<strong>나만의 AI 시스템</strong>'이 됨 </p> </div> <!-- 레이어 다이어그램 --> <div class="anim row stack g-6"> <div class="fs-tiny fw-700 fg-dimmer mb-4 ls-wide4 t-upper">쌓이는 레이어</div> <div class="row ai-center g-10 bg-warn r-8 bd-orange pad-10-14"> <div class="fs-tiny fw-700 fg-orange flex-shrink-0" style="width:52px;">6개월</div> <div class="r-4" style="height:16px; background:linear-gradient(90deg,var(--orange),#e07c00); opacity:0.85;"></div> <div class="fs-tiny fg-orange fw-600 kw">팀 AI 시스템</div> </div> <div class="row ai-center g-10 bg-surface r-8 bd pad-10-14"> <div class="fs-tiny fw-700 fg-dim flex-shrink-0" style="width:52px;">1개월</div> <div class="r-4 bg-border2" style="height:12px;"></div> <div class="fs-tiny fg-dim fw-600 kw">나만의 패턴</div> </div> <div class="row ai-center g-10 bg-surface r-8 bd pad-10-14"> <div class="fs-tiny fw-700 fg-dimmer flex-shrink-0" style="width:52px;">오늘</div> <div class="r-4 bg-border" style="height:8px;"></div> <div class="fs-tiny fg-dimmer fw-600 kw">첫 저장</div> </div> </div> </div> <!-- 우: 실천 루틴 3가지 --> <div class="row stack g-12"> <div class="fs-tiny fw-700 fg-dimmer ls-wide4 t-upper">실천 루틴 3가지</div> <div class="anim row g-14 bg-surface ai-start r-12 bd pad-16-18"> <div class="row ai-center jc-center fs-body fw-800 fg-white r-full bg-orange flex-shrink-0 sq-28">1</div> <div> <div class="fs-title fw-800 fg-ink mb-4 kw ls-tight1">좋은 프롬프트 → /prompts 폴더에 저장</div> <p class="fs-body fg-dim kw lh-16">잘 된 프롬프트는 반드시 파일로 남겨둬요</p> </div> </div> <div class="anim row g-14 bg-surface ai-start r-12 bd pad-16-18"> <div class="row ai-center jc-center fs-body fw-800 fg-white r-full bg-orange flex-shrink-0 sq-28">2</div> <div> <div class="fs-title fw-800 fg-ink mb-4 kw ls-tight1">반복 패턴 → 슬래시 커맨드로 등록</div> <p class="fs-body fg-dim kw lh-16">자주 쓰는 패턴은 /명령어로 만들어요</p> </div> </div> <div class="anim row g-14 bg-surface ai-start r-12 bd pad-16-18"> <div class="row ai-center jc-center fs-body fw-800 fg-white r-full bg-orange flex-shrink-0 sq-28">3</div> <div> <div class="fs-title fw-800 fg-ink mb-4 kw ls-tight1">팀 공유 → 팀 CLAUDE.md 만들기</div> <p class="fs-body fg-dim kw lh-16">개인 자산을 팀 전체로 확장</p> </div> </div> <div class="key-line anim mt-0"> 6개월 쌓이면 새 팀원도<br>즉시 고수준 AI 협업 가능 </div> </div> </div> </div>
+</div>
+
+<div class="slide w-full row stack h-full ov-hidden" id="adv-6" style="padding: 36px 40px; gap:16px; justify-content:flex-start;">
+
+  <!-- 헤더 -->
+  <div>
+    <div class="eyebrow anim">사례 1</div>
+    <h2 class="anim fs-display fw-800 fg-ink kw m-0 ls-tight2">처음 보는 프로젝트, <span class="highlight">30분 안에 파악하기</span></h2>
+  </div>
+
+  <!-- 본문: 좌 상황·비교 / 우 단계별 플로우 -->
+  <div class="grid grid-2 anim" style="gap:24px; flex:1; min-height:0; align-items:start;">
+
+    <!-- 좌 -->
+    <div class="row stack g-12">
+      <div class="bg-surface2 bd r-14" style="padding:16px 20px;">
+        <div class="fs-body-sm fw-700 fg-dimmer mb-6 ls-wide4 t-upper">상황</div>
+        <p class="fs-body fg-dim kw lh-16 m-0">새 프로젝트 받았는데 코드베이스·문서가 방대함</p>
+      </div>
+      <div class="grid grid-2" style="gap:10px;">
+        <div class="t-center r-12 bd-bad bg-bad-soft" style="padding:14px 16px;">
+          <div class="fs-body-sm fw-700 fg-bad mb-6 ls-wide3 t-upper">변경 전</div>
+          <p class="fs-title fw-800 fg-bad kw ls-tight1 m-0">1~2주<br>온보딩</p>
+        </div>
+        <div class="t-center r-12 bg-warn bd-2-orange" style="padding:14px 16px;">
+          <div class="fs-body-sm fw-700 fg-orange mb-6 ls-wide3 t-upper">변경 후</div>
+          <p class="fs-title fw-800 fg-orange kw ls-tight1 m-0">30분<br>핵심 파악</p>
+        </div>
+      </div>
+      <div class="key-line t-center fs-body fw-700 kw r-12" style="padding:12px 24px;">
+        AI가 먼저 읽고 요약 → 내가 집중할 곳이 명확해짐
+      </div>
+    </div>
+
+    <!-- 우: 단계별 플로우 -->
+    <div class="row stack g-10">
+      <div class="fs-body-sm fw-700 fg-dimmer ls-wide4 t-upper">단계별 플로우</div>
+      <div class="row g-12 bg-surface2 ai-start bd r-12" style="padding:12px 16px;">
+        <div class="bg-warn row ai-center jc-center fs-body-sm fw-800 fg-orange r-8 bd-orange flex-shrink-0" style="width:30px;height:30px;">1</div>
+        <div>
+          <div class="fs-body-sm fw-700 fg-orange kw" style="margin-bottom:3px;">전체 파악</div>
+          <p class="fs-body fg-dim kw lh-16 ff-mono m-0">"이 폴더 전체 구조 파악해줘. 핵심 파일 5개 찾아줘"</p>
+        </div>
+      </div>
+      <div class="row g-12 bg-surface2 ai-start bd r-12" style="padding:12px 16px;">
+        <div class="bg-warn row ai-center jc-center fs-body-sm fw-800 fg-orange r-8 bd-orange flex-shrink-0" style="width:30px;height:30px;">2</div>
+        <div>
+          <div class="fs-body-sm fw-700 fg-orange kw" style="margin-bottom:3px;">요약</div>
+          <p class="fs-body fg-dim kw lh-16 ff-mono m-0">"이 프로젝트가 뭘 하는지 3줄로 설명해줘"</p>
+        </div>
+      </div>
+      <div class="row g-12 bg-surface2 ai-start bd r-12" style="padding:12px 16px;">
+        <div class="bg-warn row ai-center jc-center fs-body-sm fw-800 fg-orange r-8 bd-orange flex-shrink-0" style="width:30px;height:30px;">3</div>
+        <div>
+          <div class="fs-body-sm fw-700 fg-orange kw" style="margin-bottom:3px;">히스토리</div>
+          <p class="fs-body fg-dim kw lh-16 ff-mono m-0">"Git 로그 보고 최근 3개월 주요 변경사항 정리해줘"</p>
+        </div>
+      </div>
+      <div class="row g-12 bg-warn ai-start bd-2-orange r-12" style="padding:12px 16px;">
+        <div class="row ai-center jc-center fs-body-sm fw-800 fg-white r-8 bg-orange flex-shrink-0" style="width:30px;height:30px;">4</div>
+        <div>
+          <div class="fs-body-sm fw-700 fg-orange kw" style="margin-bottom:3px;">내 작업 맥락</div>
+          <p class="fs-body fg-ink kw lh-16 ff-mono m-0">"내가 [작업]을 하려면 어디서 시작해야 해?"</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+
+<div class="slide p-0" id="adv-7"> <div class="row stack ai-center jc-center g-18 pos-abs inset-0 slide-pad"> <!-- 헤더 --> <div class="t-center"> <div class="eyebrow anim">사례 2</div> <h2 class="anim fs-display fw-800 fg-ink kw ls-tight2"> 대규모 수정을 <span class="highlight">안전하게</span> </h2> <p class="lead anim fs-body fg-dim mt-6 kw"> 상황: 파일 100개, 함수 300개. 네이밍 전체를 바꿔야 함 </p> </div> <!-- 5단계 플로우 + 우측 비교 --> <div class="g-20 grid" style="grid-template-columns:3fr 2fr; align-items:start;"> <!-- 좌: 5단계 --> <div class="row stack g-8"> <div class="row g-6" style="flex-wrap:nowrap; overflow-x:auto; padding-bottom:2px;"> <div class="anim row stack ai-center g-6 min-w-0"> <div class="w-full bg-warn t-center r-8 bd-orange pad-10-8"> <div class="fs-tiny fw-700 fg-orange mb-4 ls-wide3 t-upper">Step 1</div> <div class="fs-title-sm fw-700 fg-ink kw">전체 파악</div> </div> <p class="fs-body fg-dim t-center kw lh-15">영향받는 파일 전체 목록 뽑아줘</p> </div> <div class="row ai-start fg-dimmer fs-body flex-shrink-0" style="padding-top:22px;">→</div> <div class="anim row stack ai-center g-6 min-w-0"> <div class="w-full bg-warn t-center r-8 pad-10-8" style="border:2px solid var(--orange);"> <div class="fs-tiny fw-700 fg-orange mb-4 ls-wide3 t-upper">Step 2</div> <div class="fs-title-sm fw-700 fg-ink kw">Plan</div> </div> <p class="fs-body fg-dim t-center kw lh-15">순서 계획 짜줘. 실행 전 보여줘</p> </div> <div class="row ai-start fg-dimmer fs-body flex-shrink-0" style="padding-top:22px;">→</div> <div class="anim row stack ai-center g-6 min-w-0"> <div class="w-full bg-surface2 t-center r-8 bd pad-10-8"> <div class="fs-tiny fw-700 fg-dimmer mb-4 ls-wide3 t-upper">Step 3</div> <div class="fs-title-sm fw-700 fg-ink kw">확인</div> </div> <p class="fs-body fg-dim t-center kw lh-15">계획 검토 후 OK</p> </div> <div class="row ai-start fg-dimmer fs-body flex-shrink-0" style="padding-top:22px;">→</div> <div class="anim row stack ai-center g-6 min-w-0"> <div class="w-full bg-warn t-center r-8 bd-orange pad-10-8"> <div class="fs-tiny fw-700 fg-orange mb-4 ls-wide3 t-upper">Step 4</div> <div class="fs-title-sm fw-700 fg-ink kw">Implement</div> </div> <p class="fs-body fg-dim t-center kw lh-15">단계별 실행 + 각 단계 후 테스트</p> </div> <div class="row ai-start fg-dimmer fs-body flex-shrink-0" style="padding-top:22px;">→</div> <div class="anim row stack ai-center g-6 min-w-0"> <div class="w-full bg-surface2 t-center r-8 bd pad-10-8"> <div class="fs-tiny fw-700 fg-dimmer mb-4 ls-wide3 t-upper">Step 5</div> <div class="fs-title-sm fw-700 fg-ink kw">검증</div> </div> <p class="fs-body fg-dim t-center kw lh-15">변경 전후 동작 비교</p> </div> </div> <div class="key-line anim mt-6"> 사람이 판단, AI가 실행 — 대규모 작업에 적합한 구조 </div> </div> <!-- 우: 왜 AI vs 사람 --> <div class="row stack g-10"> <div class="anim r-10 bd-bad bg-bad-soft pad-14-18" style="border-left:4px solid #c0392b;"> <div class="fs-tiny fw-700 fg-bad mb-6 ls-wide3 t-upper">사람 혼자라면</div> <ul class="p-0 row stack g-4" style="list-style:none;"> <li class="fs-lead fg-bad row ai-center g-8 kw">실수·누락 발생</li> <li class="fs-lead fg-bad row ai-center g-8 kw">피로 누적</li> <li class="fs-lead fg-bad row ai-center g-8 kw">일관성 유지 어려움</li> </ul> </div> <div class="anim r-10 bd-good bg-good-soft pad-14-18" style="border-left:4px solid #166534;"> <div class="fs-tiny fw-700 fg-good mb-6 ls-wide3 t-upper">AI라면</div> <ul class="p-0 row stack g-4" style="list-style:none;"> <li class="fs-lead fg-good row ai-center g-8 kw">패턴 매칭 압도적</li> <li class="fs-lead fg-good row ai-center g-8 kw">일관성·속도</li> <li class="fs-lead fg-good row ai-center g-8 kw">피로 없이 반복</li> </ul> </div> </div> </div> </div>
+</div> <div class="slide p-0" id="adv-8">
+
+  <svg class="w-full pos-abs inset-0 h-full pe-none" aria-hidden="true" preserveAspectRatio="xMidYMid slice" style="opacity:0.06;" viewBox="0 0 1200 700">
+    <circle cx="600" cy="350" r="420" fill="none" stroke="#c96500" stroke-width="2" stroke-dasharray="14 10"/>
+    <circle cx="600" cy="350" r="260" fill="none" stroke="#c96500" stroke-width="1.5"/>
+    <circle cx="600" cy="350" r="130" fill="none" stroke="#c96500" stroke-width="1"/>
+  </svg>
+
+  <div class="row stack ai-center jc-center pos-abs inset-0" style="padding:52px 100px; gap:0;">
+
+    <!-- Before / After -->
+    <div class="g-20 ai-center w-full grid grid-vs" style="margin-bottom:24px;">
+      <div class="anim card">
+        <div class="card-title">변경 전</div>
+        <p class="fs-body fg-dim lh-18">
+          혼자 기획<br>→ 혼자 쓰기<br>→ 혼자 검증<br>→ 혼자 반복
+        </p>
+      </div>
+      <div class="fg-orange flex-shrink-0 fs-title">→</div>
+      <div class="anim card bg-warn bc-orange">
+        <div class="card-title fg-orange">변경 후</div>
+        <p class="fs-body fg-ink lh-18">
+          방향 판단(나)<br>+ 생성(AI)<br>+ 검증(AI)<br>+ 반복(자동)
+        </p>
+      </div>
+    </div>
+
+    <div class="anim t-center mb-20">
+      <div class="fs-body fg-dimmer mb-8 ls-wide1">
+        10배의 산출물이 아니라
+      </div>
+      <div class="fw-800 fg-ink ls-tight3 lh-11" style="font-size:clamp(36px,52px,56px);">
+        10배의 <span class="highlight">사고 범위</span>
+      </div>
+    </div>
+
+    <!-- 케이스 3개 -->
+    <div class="g-12 w-full mb-20 grid grid-3">
+      <div class="anim card t-center pad-14-18">
+        <div class="card-title">문서 초안</div>
+        <div class="fs-body fg-dimmer" style="text-decoration:line-through;">2시간</div>
+        <div class="fw-800 fg-orange mt-4 fs-lead">→ 20분</div>
+      </div>
+      <div class="anim card t-center pad-14-18">
+        <div class="card-title">반복 데이터 정제</div>
+        <div class="fs-body fg-dimmer" style="text-decoration:line-through;">매주 3시간</div>
+        <div class="fw-800 fg-orange mt-4 fs-lead">→ 파이프라인 1개</div>
+      </div>
+      <div class="anim card t-center pad-14-18">
+        <div class="card-title">코드리뷰 준비</div>
+        <div class="fs-body fg-dimmer" style="text-decoration:line-through;">1시간</div>
+        <div class="fw-800 fg-orange mt-4 fs-lead">→ 즉시</div>
+      </div>
+    </div>
+
+    <div class="anim key-line w-full row ai-center jc-between g-20 mt-0">
+      <p class="fw-800 fg-ink lh-15 fs-lead">
+        속도가 빨라지는 게 아니에요.<br>
+        <span class="highlight">할 수 있는 것의 경계가 달라져요.</span>
+      </p>
+      <div class="fs-body fg-dim fw-600 flex-shrink-0" style="white-space:nowrap;">
+        구체적인 방법은<br>실전 팁 12가지에 →
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<div class="slide p-0 ai-center" id="s-tip-divider">
+<svg class="w-full pos-abs inset-0 h-full pe-none" aria-hidden="true" preserveAspectRatio="xMidYMid slice" style="opacity:0.12;" viewBox="0 0 1200 700">
+<circle cx="600" cy="350" fill="none" r="320" stroke="#c96500" stroke-dasharray="10 7" stroke-width="2.5"></circle>
+<circle cx="600" cy="350" fill="none" r="210" stroke="#c96500" stroke-width="2"></circle>
+<circle cx="600" cy="350" fill="none" r="110" stroke="#c96500" stroke-width="1.5"></circle>
+</svg>
+<div class="t-center pos-rel" style="max-width:800px;">
+<div class="eyebrow anim mb-16">Part 4</div>
+<h1 class="anim ls-tight3 fs-hero-xl" style="line-height:1.0; margin:0 0 28px;">실전 팁</h1>
+<p class="lead anim t-center fg-dim fs-title" style="max-width:600px; margin:0 auto 32px;">직접 쓰면서 정리한 12가지, 4가지 카테고리</p>
+<div class="anim row g-10 flex-wrap jc-center">
+<div class="bg-surface fs-body fg-dim fw-600 r-pill bd pad-10-18">세팅·맥락</div>
+<div class="bg-surface fs-body fg-dim fw-600 r-pill bd pad-10-18">POC·기획</div>
+<div class="bg-surface fs-body fg-dim fw-600 r-pill bd pad-10-18">디자인</div>
+<div class="bg-warn fs-body fg-orange fw-700 r-pill bd-orange pad-10-18">효율·자동화</div>
+</div>
+</div>
+<div class="chapter-lounge"><span class="cl-icon">#</span>막힐 때는 슬랙 <a class="cl-link" href="https://miridih.slack.com/archives/C0AUZDBKGLW" target="_blank">ax_라운지</a> 채널에 편하게 물어보세요</div>
+</div>
+
+
+<div class="slide p-0" id="s-tip-g-setup">
+<svg class="w-full pos-abs inset-0 h-full pe-none" aria-hidden="true" preserveAspectRatio="xMidYMid slice" style="opacity:0.05;" viewBox="0 0 1200 700">
+<circle cx="600" cy="350" fill="none" r="260" stroke="#c96500" stroke-dasharray="6 5" stroke-width="1.5"></circle>
+</svg>
+<div class="row stack ai-center jc-center t-center g-12 pos-abs inset-0">
+<div class="eyebrow anim">팁 카테고리 1 / 4</div>
+<h2 class="anim ls-tight3 fs-hero lh-11">세팅 · 맥락</h2>
+<div class="anim r-pill h-2px bg-border2" style="width:48px;"></div>
+<p class="lead anim t-center fs-title m-0-auto" style="max-width:560px;">초기 1회 설정으로 이후 작업 속도가 달라지는 팁들이에요.</p>
+</div>
+</div>
+
+
+<div class="slide ai-center slide-pad" id="s-tip1">
+<div class="two-col mw-content">
+<div class="left">
+<div class="eyebrow anim">팁 1 / 12</div>
+<div class="anim row ai-center g-18 mb-16">
+<div class="tip-badge">1</div>
+<h2 class="fs-display fw-800 fg-ink kw ls-tight2">폴더 구조 +<br/>CLAUDE.md 먼저</h2>
+</div>
+<div class="key-line anim">
+          CLAUDE.md가 없으면<br/>Claude는 매번 서점 전체를 뒤져요
+        </div>
+<p class="lead anim fs-lead mt-16">Claude Code를 처음 켜기 전에 이 두 가지를 먼저 세팅하면, 이후 모든 작업이 훨씬 빠르고 정확해져요.</p>
+</div>
+<div class="row stack g-20">
+<div class="card anim bg-warn bc-orange">
+<div class="card-title">CLAUDE.md에 넣을 것</div>
+<p>프로젝트 개요, 주제별 참조 파일 경로, 라우팅 표. 이 세 가지만 있어도 Claude가 필요한 파일만 골라서 읽어요. 불필요한 읽기 = 토큰 낭비.</p>
+</div>
+<div class="card anim">
+<div class="card-title">시작 명령어</div>
+<p>"Claude Code 잘 활용하는 방법 리서치해서 내 폴더 구조에 적용할 계획 세워" — 이 한 문장으로 시작하면 Claude가 구조를 제안해줘요.</p>
+</div>
+</div>
+</div>
+</div>
+
+
+<div class="slide ai-center slide-pad" id="s-tip2">
+<div class="two-col mw-content">
+<div class="left">
+<div class="eyebrow anim">팁 2 / 12</div>
+<div class="anim row ai-center g-18 mb-16">
+<div class="tip-badge">2</div>
+<h2 class="fs-display fw-800 fg-ink kw ls-tight2">메모리 파일<br/>압축 규칙</h2>
+</div>
+<div class="key-line anim">
+          50줄 초과 시 "압축해줘"<br/>— 메모리도 관리가 필요해요
+        </div>
+<p class="lead anim fs-lead mt-16">메모리 파일은 방치하면 비대해지고, 커질수록 매 요청마다 토큰을 잡아먹으니 주기적으로 압축해야 해요.</p>
+</div>
+<div class="row stack g-20">
+<div class="card anim bg-warn bc-orange">
+<div class="card-title">압축 규칙</div>
+<ul class="list mt-8">
+<li class="fs-body pad-8-0"><span class="dot"></span><span><span class="em">50줄 초과</span> 시 제자리 요약</span></li>
+<li class="fs-body pad-8-0"><span class="dot"></span><span>여전히 초과 시 오래된 2/3를 '창고' 폴더로 이동</span></li>
+<li class="fs-body pad-8-0" style="border-bottom:none;"><span class="dot"></span><span>창고는 필요할 때만 "창고 참고해줘"</span></li>
+</ul>
+</div>
+<div class="card anim">
+<div class="card-title">명령어</div>
+<p>"메모리 파일 정리해줘. 50줄 넘으면 압축하고 오래된 건 archive로." — 이 한 줄로 Claude가 처리해요.</p>
+</div>
+</div>
+</div>
+</div>
+
+
+<div class="slide p-0" id="s-tip-g-poc">
+<svg class="w-full pos-abs inset-0 h-full pe-none" aria-hidden="true" preserveAspectRatio="xMidYMid slice" style="opacity:0.05;" viewBox="0 0 1200 700">
+<circle cx="600" cy="350" fill="none" r="260" stroke="#c96500" stroke-dasharray="6 5" stroke-width="1.5"></circle>
+</svg>
+<div class="row stack ai-center jc-center t-center g-12 pos-abs inset-0">
+<div class="eyebrow anim">팁 카테고리 2 / 4</div>
+<h2 class="anim ls-tight3 fs-hero lh-11">POC · 기획</h2>
+<div class="anim r-pill h-2px bg-border2" style="width:48px;"></div>
+<p class="lead anim t-center fs-title m-0-auto" style="max-width:560px;">POC 먼저, 기획서는 나중에. 실전 흐름이에요.</p>
+</div>
+</div>
+
+
+<div class="slide ai-center slide-pad" id="s-tip4">
+<div class="two-col mw-content">
+<div class="left">
+<div class="eyebrow anim">팁 4 / 12</div>
+<div class="anim row ai-center g-18 mb-16">
+<div class="tip-badge">4</div>
+<h2 class="fs-display fw-800 fg-ink kw ls-tight2">기획보다<br/>POC 먼저</h2>
+</div>
+<div class="key-line anim">
+          POC 먼저 만들면<br/>기획서 수정 지옥이 없어요
+        </div>
+<p class="lead anim fs-lead mt-16">기획서를 먼저 쓰면 글만 보고 판단하게 돼요. POC를 먼저 만들면 사용성 검증이 자연스럽게 따라와요.</p>
+</div>
+<div class="row stack g-12">
+<div class="card anim bg-warn pad-16-20 bc-orange">
+<div class="card-title">왜 더 좋냐면</div>
+<p>POC를 만들면서 "이 흐름이 어색하네"가 실제 화면에서 바로 보여요. 기획서 글자만 읽을 땐 못 잡는 것들이에요.</p>
+</div>
+<div class="card anim pad-16-20">
+<div class="card-title">순서</div>
+<p>POC → 흐름 검증 → 기획서 역으로 작성. 검증된 내용이라 기획서도 훨씬 탄탄해져요.</p>
+</div>
+<div class="card anim pad-16-20 bd-l-orange">
+<div class="card-title fg-orange">실제 프로덕트에 가까울수록</div>
+<p class="kw">팀 전달·UT·구현 가능성 검증을 한 번에. <span class="em">"Claude Code로 된다 = 실제 개발도 가능"</span></p>
+</div>
+<div class="card anim pad-16-20" style="border-left:4px solid var(--amber);">
+<div class="card-title fg-orange">진짜 혁신은 인터랙션</div>
+<p class="kw">원하는 인터랙션 직접 만들고 → 코드에서 값 추출 → 바로 전달.</p>
+</div>
+</div>
+</div>
+</div>
+
+
+<div class="slide ai-center slide-pad" id="s-tip5">
+<div class="two-col mw-content">
+<div class="left">
+<div class="eyebrow anim">팁 5 / 12</div>
+<div class="anim row ai-center g-18 mb-16">
+<div class="tip-badge">5</div>
+<h2 class="fs-display fw-800 fg-ink kw ls-tight2">자주 쓰는 화면<br/>베이스 파일로<br/>만들어두기</h2>
+</div>
+<div class="key-line anim">
+          새 POC = 파일 복사 + 기능만 추가.<br/>매번 제로베이스가 아니에요
+        </div>
+<p class="lead anim fs-lead mt-16">자주 쓰는 UI 패턴을 미리 저장해두면, 새 POC를 시작할 때마다 시간을 크게 아낄 수 있어요.</p>
+</div>
+<div class="row stack g-20">
+<div class="card anim bg-warn bc-orange">
+<div class="card-title">방법</div>
+<p>Chat 화면, 리스트 화면 등 자주 쓰는 UI 패턴을 HTML 파일로 만들어둬요. 새 POC는 파일 복사 → 기능만 추가. 처음부터 다시 만드는 시간이 없어요.</p>
+</div>
+<div class="card anim">
+<div class="card-title">주의사항</div>
+<p>베이스 파일은 반드시 GitHub에 저장해두세요. 로컬만 있으면 Claude Code가 폴더 정리할 때 사라질 수 있어요.</p>
+</div>
+</div>
+</div>
+</div>
+
+
+<div class="slide ai-center slide-pad" id="s-tip6">
+<div class="two-col mw-content">
+<div class="left">
+<div class="eyebrow anim">팁 6 / 12</div>
+<div class="anim row ai-center g-18 mb-16">
+<div class="tip-badge">6</div>
+<h2 class="fs-display fw-800 fg-ink kw ls-tight2">POC 범위<br/>명확히 하기</h2>
+</div>
+<div class="key-line anim">
+          문제는 개발자의 <strong>착각</strong>이에요.<br/>더미라는 걸 <span class="highlight">명확히 표시</span>하지 않으면 그대로 구현돼요.
+        </div>
+<p class="lead anim fs-lead mt-16">
+          "이거 실제 API 연결된 거죠?"의 문제가 아니에요. 더미데이터를 실제 데이터로 착각해서 그대로 구현해버리는 게 문제예요.
+        </p>
+</div>
+<div class="row stack g-20">
+<div class="card anim bg-bad-soft" style="border-color:#fecaca;">
+<div class="card-title fg-bad">진짜 문제</div>
+<p>실제 서비스랑 구분을 못 하는 게 문제가 아니에요. <strong>개발자의 착각</strong>이 문제예요. POC에 넣은 더미 값·샘플 텍스트를 실제 스펙으로 착각하고 그대로 구현해버리는 거예요.</p>
+</div>
+<div class="card anim bg-warn bc-orange">
+<div class="card-title">선제적 대응</div>
+<p>POC 공유 전 반드시 <span class="em">"이 값·텍스트는 더미예요"</span>를 화면과 문서 양쪽에 명시하세요. 화면 상단 "POC — 더미데이터" 배지, 더미인 필드엔 별도 표식을 달아두세요.</p>
+</div>
+</div>
+</div>
+</div>
+
+
+<div class="slide p-0" id="s-tip-g-design">
+<svg class="w-full pos-abs inset-0 h-full pe-none" aria-hidden="true" preserveAspectRatio="xMidYMid slice" style="opacity:0.05;" viewBox="0 0 1200 700">
+<circle cx="600" cy="350" fill="none" r="260" stroke="#c96500" stroke-dasharray="6 5" stroke-width="1.5"></circle>
+</svg>
+<div class="row stack ai-center jc-center t-center g-12 pos-abs inset-0">
+<div class="eyebrow anim">팁 카테고리 3 / 4</div>
+<h2 class="anim ls-tight3 fs-hero lh-11">디자인</h2>
+<div class="anim r-pill h-2px bg-border2" style="width:48px;"></div>
+<p class="lead anim t-center fs-title m-0-auto" style="max-width:560px;">AI가 잘하는 영역과 못하는 영역을 가르는 법이에요.</p>
+</div>
+</div>
+
+
+<div class="slide ai-center slide-pad" id="s-tip3">
+<div class="two-col mw-content">
+<div class="left">
+<div class="eyebrow anim">팁 3 / 12</div>
+<div class="anim row ai-center g-18 mb-16">
+<div class="tip-badge">3</div>
+<h2 class="fs-display fw-800 fg-ink kw ls-tight2">Figma SVG<br/>첨부하기</h2>
+</div>
+<div class="key-line anim">
+          이미지 → SVG 첨부만 해도<br/>재수정 횟수가 절반으로 줄어요
+        </div>
+<p class="lead anim fs-lead mt-16">Figma Make가 어렵거나 시간이 없을 때, SVG 첨부만으로도 Claude가 화면 구조를 정확하게 파악해요.</p>
+</div>
+<div class="row stack g-20">
+<div class="anim g-12 ai-center grid grid-vs">
+<div class="bg-surface2 t-center r-12 bd" style="padding:22px;">
+<div class="fs-body-sm fw-700 fg-dimmer mb-8">이미지만 첨부</div>
+<div class="fg-dimmer fs-body" style="line-height:1.92;">레이아웃·간격<br/>잘못 해석<br/>재수정 반복</div>
+</div>
+<div class="t-center fg-orange fs-title-sm">→</div>
+<div class="bg-warn t-center r-12 bd-15-orange" style="padding:22px;">
+<div class="fs-body-sm fw-700 fg-orange mb-8">SVG 첨부</div>
+<div class="fg-dim fs-body" style="line-height:1.92;">구조·간격·텍스트<br/>정확하게 파악<br/>한 번에 결과</div>
+</div>
+</div>
+<div class="card anim bg-warn bc-orange">
+<div class="card-title">Figma에서 SVG 내보내기</div>
+<p>레이어 우클릭 → Copy as SVG → Claude에 붙여넣기. <strong>30초면 돼요.</strong></p>
+</div>
+</div>
+</div>
+</div>
+
+
+<div class="slide ai-center slide-pad" id="s-tip9">
+<div class="two-col mw-content">
+<div class="left">
+<div class="eyebrow anim">팁 9 / 12</div>
+<div class="anim row ai-center g-18 mb-16">
+<div class="tip-badge">9</div>
+<h2 class="fs-display fw-800 fg-ink kw ls-tight2">POC에<br/>상태창 만들기</h2>
+</div>
+<div class="key-line anim">
+          클릭 한 번으로 엣지 케이스 시연.<br/>말로 설명하는 것보다 10배 빨라요
+        </div>
+<p class="lead anim fs-lead mt-16">
+          로딩, 에러, 빈 화면 — 이 상태들을 POC 안에서 바로 보여줄 수 있으면, 개발자와의 리뷰가 완전히 달라져요.
+        </p>
+</div>
+<div class="row stack g-20">
+<div class="card anim bg-warn bc-orange">
+<div class="card-title">상태창에 넣을 것들</div>
+<ul class="list mt-8">
+<li class="fs-body pad-8-0"><span class="dot"></span><span>로딩 / 빈 화면 / 에러 / 성공 상태 전환</span></li>
+<li class="fs-body pad-8-0"><span class="dot"></span><span>디바이스 변환 (모바일/태블릿/데스크탑)</span></li>
+<li class="fs-body pad-8-0" style="border-bottom:none;"><span class="dot"></span><span>새로고침, 경로 파일 표시</span></li>
+</ul>
+</div>
+<div class="card anim">
+<div class="card-title">상태창이 필요한 이유</div>
+<p class="kw">"이 상태에서는 이렇게 돼요"를 클릭 한 번으로 보여줄 수 있어요. 말로 설명하는 것보다 <strong>10배</strong> 빠르게 이해시켜요.</p>
+</div>
+</div>
+</div>
+</div>
+
+
+<div class="slide ai-center slide-pad" id="s-tip7">
+<div class="two-col mw-content">
+<div class="left">
+<div class="eyebrow anim">팁 7 / 12</div>
+<div class="anim row ai-center g-18 mb-16">
+<div class="tip-badge">7</div>
+<h2 class="fs-display fw-800 fg-ink kw ls-tight2">AI 디자인 감각 한계 +<br/>목줄 전략</h2>
+</div>
+<div class="key-line anim">
+          초반엔 느슨하게, 갈수록 타이트하게.<br/>명령 단위를 점점 세분화하세요
+        </div>
+<p class="lead anim fs-lead mt-16">
+          AI는 기능을 만들 수 있지만, <span class="highlight">"AI스러운 디자인"</span>을 해결하기 위해서는 디자인 감각 있는 사람이 목줄을 잡아줘야 해요.
+        </p>
+</div>
+<div class="row stack g-20">
+<div class="card anim bg-surface2">
+<div class="card-title">AI의 한계</div>
+<p>자연스러운 시각 보정, 호흡감, 여백의 감각이 없어요. 기능은 만들어도 "왜인지 어색함"은 못 잡아요. 그게 디자이너의 역할이에요.</p>
+</div>
+<div class="card anim bg-warn bc-orange">
+<div class="card-title">목줄 전략</div>
+<div class="g-10 mt-10 grid grid-2">
+<div class="bg-surface r-8 bd" style="padding:14px;">
+<div class="fs-body fw-700 fg-dimmer mb-6">초반 — 느슨하게</div>
+<div class="fg-dim fs-body" style="line-height:1.92;">오픈된 요청<br/>아이디에이션<br/>"자유롭게 만들어봐"</div>
+</div>
+<div class="bg-warn r-8 bd-orange" style="padding:14px;">
+<div class="fs-body fw-700 fg-orange mb-6">갈수록 — 타이트하게</div>
+<div class="fg-ink fs-body" style="line-height:1.92;">텍스트 컬러 하나<br/>간격 1px씩<br/>명령 단위 세분화</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+
+<div class="slide p-0" id="s-tip-g-tools">
+<svg class="w-full pos-abs inset-0 h-full pe-none" aria-hidden="true" preserveAspectRatio="xMidYMid slice" style="opacity:0.05;" viewBox="0 0 1200 700">
+<circle cx="600" cy="350" fill="none" r="260" stroke="#c96500" stroke-dasharray="6 5" stroke-width="1.5"></circle>
+</svg>
+<div class="row stack ai-center jc-center t-center g-12 pos-abs inset-0">
+<div class="eyebrow anim">팁 카테고리 4 / 4</div>
+<h2 class="anim ls-tight3 fs-hero lh-11">효율 · 자동화</h2>
+<div class="anim r-pill h-2px bg-border2" style="width:48px;"></div>
+<p class="lead anim t-center fs-title m-0-auto" style="max-width:560px;">토큰·시간을 절약하는 실전 노하우예요.</p>
+</div>
+</div>
+
+
+<div class="slide ai-center slide-pad" id="s-tip8">
+<div class="two-col mw-content">
+<div class="left">
+<div class="eyebrow anim">팁 8 / 12</div>
+<div class="anim row ai-center g-18 mb-16">
+<div class="tip-badge">8</div>
+<h2 class="fs-display fw-800 fg-ink kw ls-tight2">수정사항 묶어서<br/>단계별 처리</h2>
+</div>
+<div class="key-line anim">
+          "3단계 계획 세워서 처리해줘"<br/>= 누락 없이 토큰도 절약
+        </div>
+<p class="lead anim fs-lead mt-16">수정사항을 하나씩 요청하면 비효율적이고, 한꺼번에 다 던지면 누락이 생겨요.</p>
+</div>
+<div class="row stack g-20">
+<div class="card anim" style="border-left:4px solid var(--red);">
+<div class="card-title fg-bad">하나씩 요청 (비효율)</div>
+<p>요청을 하나씩 던지면, 코드를 그때마다 다시 읽어요. 토큰도 낭비고, 시간도 낭비예요.</p>
+</div>
+<div class="card anim bg-warn bc-orange bd-l-orange">
+<div class="card-title">정답: 묶어서 단계별 계획</div>
+<p class="kw">10개 주고 <span class="em">"3단계 계획 세워서 처리해줘"</span>라고 하면 코드 1번 읽고 3/3/4 단계로 나눠서 처리해요. 누락 없이 효율적이에요.</p>
+</div>
+</div>
+</div>
+</div>
+
+
+<div class="slide ai-center slide-pad" id="s-tip10">
+<div class="two-col mw-content">
+<div class="left">
+<div class="eyebrow anim">팁 10 / 12</div>
+<div class="anim row ai-center g-18 mb-16">
+<div class="tip-badge">10</div>
+<h2 class="fs-display fw-800 fg-ink kw ls-tight2">Claude Code +<br/>Gemini 조합</h2>
+</div>
+<div class="key-line anim">
+          토큰 10번 → 1번으로.<br/>비용 절감 + 속도 향상
+        </div>
+<p class="lead anim fs-lead mt-16">
+          Claude Code와 Gemini를 상황에 맞게 나눠 쓰면, 비용을 줄이면서도 품질은 유지할 수 있어요.
+        </p>
+</div>
+<div class="row stack g-16">
+<div class="card anim bg-warn bc-orange pad-18-22">
+<div class="card-title">대규모 수정 — Claude Code</div>
+<p>전체 맥락 파악, 구조 변경, 리팩토링에 강해요.</p>
+</div>
+<div class="card anim pad-18-22">
+<div class="card-title">세부 수정 — Gemini</div>
+<p>코드를 붙여넣고 핀포인트로 고쳐요. Claude 토큰 절약 + 더 빠른 수정.</p>
+</div>
+<div class="card anim bd-l-orange pad-18-22">
+<div class="card-title fg-orange">막히거나 토큰 소진 시</div>
+<p>Gemini에 문제를 주고 <span class="em">Claude Code용 프롬프트</span>를 만들게 해요. GitHub를 AI Studio에 연결해두면 이어서 작업할 수 있어요.</p>
+</div>
+</div>
+</div>
+</div>
+
+
+<div class="slide ai-center slide-pad" id="s-tip11">
+<div class="two-col mw-content">
+<div class="left">
+<div class="eyebrow anim">팁 11 / 12</div>
+<div class="anim row ai-center g-18 mb-16">
+<div class="tip-badge">11</div>
+<h2 class="fs-display fw-800 fg-ink kw ls-tight2">GitHub + Vercel<br/>배포 자동화</h2>
+</div>
+<div class="key-line anim">
+          POC 완성 → 자동 배포 → 링크 공유.<br/>전부 자동이에요
+        </div>
+<p class="lead anim fs-lead mt-16">
+          POC 코드를 로컬에만 두면 언제든 사라질 수 있어요.
+        </p>
+</div>
+<div class="row stack g-20">
+<div class="card anim bg-bad-soft" style="border-color:#fecaca;">
+<div class="card-title fg-bad">로컬만 쓰면 생기는 문제</div>
+<p>Claude Code가 폴더 정리할 때 삭제될 수 있어요. 며칠 걸쳐 만든 POC가 사라지는 걸 직접 경험했어요.</p>
+</div>
+<div class="card anim bg-warn bc-orange">
+<div class="card-title">GitHub + Vercel 세트</div>
+<p>POC 완성 → GitHub 푸시 → Vercel 자동 배포 → 링크 공유. 초기 설정도 Claude Code에 "설정해줘" 하면 알아서 다 해줘요.</p>
+</div>
+</div>
+</div>
+</div>
+
+
+<div class="slide ai-center slide-pad" id="s-tip12">
+<div class="two-col mw-content">
+<div class="left">
+<div class="eyebrow anim">팁 12 / 12</div>
+<div class="anim row ai-center g-18 mb-16">
+<div class="tip-badge">12</div>
+<h2 class="fs-display fw-800 fg-ink kw ls-tight2">POC 만들고<br/>QA 루프 돌리기</h2>
+</div>
+<div class="key-line anim">
+          98점 될 때까지 반복.<br/>마지막은 사람이 검수해요
+        </div>
+<p class="lead anim fs-lead mt-16">
+          만들고 끝이 아니라, 에이전트 여러 개를 돌려 서로 검토하게 하면 품질이 다른 수준으로 올라가요.
+        </p>
+</div>
+<div class="row stack g-10">
+<div class="anim bg-surface row ai-start g-12 r-8 bd pad-12-16">
+<div class="fg-white fs-body fw-700 row ai-center jc-center r-full bg-orange flex-shrink-0 sq-24" style="margin-top:2px;">1</div>
+<div>
+<div class="fw-700 fg-ink fs-body mb-2">읽고 계획 세우기</div>
+<div class="fg-dim fs-body" style="line-height:1.86;">POC 구조와 요구사항 파악 → 개선 계획 수립</div>
+</div>
+</div>
+<div class="anim bg-surface row ai-start g-12 r-8 bd pad-12-16">
+<div class="fg-white fs-body fw-700 row ai-center jc-center r-full bg-orange flex-shrink-0 sq-24" style="margin-top:2px;">2</div>
+<div>
+<div class="fw-700 fg-ink fs-body mb-2">계획에 따라 구현·작성</div>
+<div class="fg-dim fs-body" style="line-height:1.86;">에이전트 1의 계획대로 실제 구현 진행</div>
+</div>
+</div>
+<div class="anim bg-warn row ai-start g-12 r-8 bd-orange pad-12-16">
+<div class="fg-white fs-body fw-700 row ai-center jc-center r-full bg-orange flex-shrink-0 sq-24" style="margin-top:2px;">3</div>
+<div>
+<div class="fw-700 fg-ink fs-body mb-2">에이전트 3·4·5 — 냉정한 평가</div>
+<div class="fg-dim fs-body" style="line-height:1.86;">새로운 관점으로 구멍 찾기 → 다수의 에이전트로 피드백 전달</div>
+</div>
+</div>
+<div class="anim row ai-center g-10 bg-surface2 r-8 bd pad-10-16">
+<div class="fg-orange fs-title-sm">↺</div>
+<div class="fs-body fg-dim">다수 에이전트로 피드백 전달 → 루프 반복 → 평균 <span class="fg-ink fw-700">98점</span> 달성<br/><span class="fs-body fg-dimmer">* Claude Code 창을 여러 개 띄워서 역할을 나눠요</span></div>
+</div>
+</div>
+</div>
+</div>
+
+
+<div class="slide p-0" id="s-closing">
+<svg class="w-full pos-abs inset-0 h-full pe-none" aria-hidden="true" preserveAspectRatio="xMidYMid slice" style="opacity:0.06;" viewBox="0 0 1200 700">
+<circle cx="980" cy="120" fill="none" r="340" stroke="#c96500" stroke-width="2"></circle>
+<circle cx="980" cy="120" fill="none" r="200" stroke="#c96500" stroke-width="1.5"></circle>
+<circle cx="180" cy="600" fill="none" r="200" stroke="#c96500" stroke-dasharray="10 7" stroke-width="1.5"></circle>
+</svg>
+<div class="pos-abs inset-0 grid grid-2">
+<!-- 좌: 핵심 메시지 -->
+<div class="row stack jc-center g-20" style="padding:64px 72px;">
+<div class="eyebrow anim">오늘의 인사이트</div>
+<h2 class="anim fw-800 ls-tight3 lh-12" style="font-size:clamp(30px,51px,56px);">
+          AI는 실행을 가져갔어요.<br/><span class="highlight">남은 건 판단이에요.</span>
+</h2>
+<div class="anim bg-orange r-pill" style="width:48px; height:3px;"></div>
+<div class="anim fw-800 ls-tight2" style="font-size:clamp(20px,33px,36px);">
+<span class="highlight">판단의 질이 결과를 결정한다</span>
+</div>
+<p class="lead anim fg-dim lh-16 fs-lead">도구가 바뀐 게 아니에요.<br/>같은 판단으로 낼 수 있는 결과가 달라진 거예요.</p>
+</div>
+<!-- 우: 카드 3개 -->
+<div class="row stack g-14 jc-center" style="padding:44px 64px;">
+<div class="card anim">
+<div class="card-title">여러분은 이미 하고 있어요</div>
+<p>매일 결정하고, 우선순위를 정하고, 방향을 잡는 일 — 그게 판단이에요. AI는 그 판단의 실행 속도를 바꿔놓는 협업 파트너예요.</p>
+</div>
+<div class="card anim">
+<div class="card-title">시작은 간단합니다</div>
+<p>오늘 밤 claude.ai 열고 "나는 [직무]야, [문제]가 있어. 어떻게 접근하면 좋을까?" 한 문장이면 됩니다.</p>
+</div>
+<div class="card anim bg-warn bc-orange">
+<div class="card-title fg-orange">오늘 밤, 딱 하나만</div>
+<p><a class="fg-orange fw-700" href="https://claude.ai" style="text-decoration:underline;" target="_blank" rel="noopener noreferrer">claude.ai</a> 열고 — "나는 [직무]야, 지금 [상황]인데 [문제]가 있어. 어떻게 접근하면 좋을까?" 이 한 문장이 전부예요.</p>
+<div class="mt-12 fs-body fg-dim" style="padding-top:12px; border-top:1px dashed var(--orange-br);">Claude Code로 더 해보고 싶다면 → <a class="fg-orange fw-700" href="https://drive.google.com/file/d/1P0ZXa1EWeV72BsYpOlCLn8rairBz4XlF/view?usp=sharing" style="text-decoration:underline;" target="_blank" rel="noopener noreferrer">스타터킷 받기 </a></div>
+</div>
+</div>
+</div>
+</div>
+
+
+<div class="slide p-0" id="s-channel">
+<svg class="w-full pos-abs inset-0 h-full pe-none" aria-hidden="true" preserveAspectRatio="xMidYMid slice" style="opacity:0.05;" viewBox="0 0 1200 700">
+<circle cx="200" cy="150" fill="none" r="260" stroke="#c96500" stroke-dasharray="12 8" stroke-width="2"></circle>
+<circle cx="1000" cy="560" fill="none" r="200" stroke="#c96500" stroke-width="1.5"></circle>
+</svg>
+<div class="row ai-stretch jc-center pos-abs inset-0" style="padding:0 80px;">
+<div class="w-full t-center row stack jc-center g-24" style="max-width:960px; padding:24px 0;">
+<div>
+<div class="eyebrow anim">오늘 이후로도</div>
+<h2 class="anim mt-8 lh-12" style="font-size:clamp(34px,56px,62px);">
+          #ax_라운지 채널에서 <span class="highlight">같이 써봐요</span>
+</h2>
+<p class="lead anim t-center lh-16 fs-lead" style="max-width:680px; margin:14px auto 0;">막히는 것, 새로 발견한 것, 좋았던 프롬프트 — 혼자보다 같이 쓰면 훨씬 빨라요.</p>
+</div>
+<div class="anim g-14 grid grid-3">
+<div class="bg-surface t-center r-14 bd" style="padding:18px 16px;">
+<div class="fw-700 fg-ink mb-4 fs-body">질문 올려주세요</div>
+<div class="fs-body fg-dimmer lh-15">막힌 것, 이해 안 되는 것 같이 풀어요</div>
+</div>
+<div class="bg-surface t-center r-14 bd" style="padding:18px 16px;">
+<div class="fw-700 fg-ink mb-4 fs-body">써봤으면 공유해요</div>
+<div class="fs-body fg-dimmer lh-15">좋았던 프롬프트, 실패 시도도 인사이트</div>
+</div>
+<div class="bg-warn t-center r-14 bd-2-orange" style="padding:18px 16px;">
+<div class="fw-700 fg-orange mb-4 fs-body">같이 성장해요</div>
+<div class="fs-body fg-dim lh-15">혼자 공부보다 같이 쓰는 게 훨씬 빨라요</div>
+</div>
+</div>
+<div class="anim row g-14 jc-center flex-wrap">
+<a class="ai-center g-8 fg-white fs-title-sm fw-700 r-10 fg-white-on-ink" href="https://miridih.slack.com/archives/C0AUZDBKGLW" style="display:inline-flex; padding:11px 20px; text-decoration:none; border:1px solid var(--ink); transition:transform 0.15s;">
+<span>#ax_라운지 바로가기</span>
+<span class="fs-body" style="opacity:0.7;">→</span>
+</a>
+<a class="ai-center g-8 fg-white fs-title-sm fw-700 r-10 bg-orange" href="https://drive.google.com/file/d/1P0ZXa1EWeV72BsYpOlCLn8rairBz4XlF/view?usp=sharing" style="display:inline-flex; padding:11px 20px; text-decoration:none; border:1px solid var(--orange); transition:transform 0.15s;" target="_blank" rel="noopener noreferrer">
+<span>Claude Code 스타터킷 받기</span>
+<span class="fs-body" style="opacity:0.85;">↓</span>
+</a>
+</div>
+</div>
+</div>
+</div>
+
+
+<div class="slide-num" id="slideNum">1 / —</div>
+<!-- 스크립트 힌트 오버레이 — deck 내부 absolute -->
+<div class="script-overlay" id="scriptOverlay" role="complementary" aria-label="강연 스크립트 힌트">
+<div class="s-label">SCRIPT HINT — Ctrl+S 키로 토글</div>
+<div id="scriptText"></div>
+</div>
+</div><!-- /deck -->
+<script>
+  // 슬라이드 ID 레이블 (왼쪽 상단) — 텍스트 선택·복사 가능
+  document.querySelectorAll('.slide[id]').forEach(slide => {
+    const label = document.createElement('div');
+    label.textContent = '#' + slide.id;
+    label.className = '_slide-id-label';
+    label.style.cssText = 'position:absolute;top:8px;left:10px;font-size:10px;font-family:monospace;color:rgba(120,80,20,0.55);z-index:1000;letter-spacing:0.05em;user-select:text;cursor:text;';
+    slide.appendChild(label);
+  });
+
+  const deck = document.getElementById('deck');
+
+  // 16:9 letterbox 크기 계산
+  // 1280×720 고정. transform:scale만 조정해서 단순 확대/축소. 반응형 없음.
+  function fitDeck() {
+    const scale = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
+    deck.style.transform = 'translate(-50%, -50%) scale(' + scale + ')';
+  }
+  fitDeck();
+  let _resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(_resizeTimer);
+    _resizeTimer = setTimeout(fitDeck, 50);
+  });
+
+  // anim 딜레이: nth-child CSS 대신 JS로 슬라이드별 순서 계산
+  document.querySelectorAll('.slide').forEach(slide => {
+    slide.querySelectorAll('.anim').forEach((el, i) => {
+      el.style.animationDelay = (0.04 + i * 0.06) + 's';
+    });
+  });
+
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  let cur = 0;
+  let scriptVisible = false;
+
+  function show(idx) {
+    const next = Math.max(0, Math.min(idx, total - 1));
+    if (next === cur && slides[cur].classList.contains('active')) {
+      // 초기 호출 시 이미 active면 remove 없이 진행
+      document.getElementById('slideNum').textContent = (cur + 1) + ' / ' + total;
+      if (scriptVisible) updateScriptText();
+      return;
+    }
+    slides[cur].classList.remove('active');
+    cur = next;
+    slides[cur].classList.add('active');
+    // 슬라이드 배경색을 body로 확장 — letterbox/여백을 슬라이드와 동일하게
+    const transparent = 'rgba(0, 0, 0, 0)';
+    const fallbackBg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#f7f7f5';
+    const attr = slides[cur].dataset.bodyBg;
+    if (attr) {
+      // data-body-bg="left|right" 형식이면 좌우 그라디언트, 단일값이면 단색
+      if (attr.includes('|')) {
+        const [l, r] = attr.split('|');
+        document.body.style.background = `linear-gradient(to right, ${l} 50%, ${r} 50%)`;
+      } else {
+        document.body.style.background = attr;
+      }
+    } else {
+      const slideBg = getComputedStyle(slides[cur]).backgroundColor;
+      document.body.style.background = (slideBg && slideBg !== transparent) ? slideBg : fallbackBg;
+    }
+    document.getElementById('slideNum').textContent = (cur + 1) + ' / ' + total;
+
+    // 슬라이드 전환 시 스크립트 힌트 텍스트 업데이트
+    if (scriptVisible) updateScriptText();
+  }
+
+  function updateScriptText() {
+    const hint = slides[cur].getAttribute('data-script') || '(스크립트 힌트 없음)';
+    document.getElementById('scriptText').textContent = hint;
+  }
+
+  function toggleScript() {
+    scriptVisible = !scriptVisible;
+    const overlay = document.getElementById('scriptOverlay');
+    if (scriptVisible) {
+      updateScriptText();
+      overlay.classList.add('visible');
+    } else {
+      overlay.classList.remove('visible');
+    }
+  }
+
+  function go(dir) { show(cur + dir); }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight') { e.preventDefault(); go(1); }
+    if (e.key === 'ArrowLeft')  { e.preventDefault(); go(-1); }
+    if (e.key === 'Home') show(0);
+    if (e.key === 'End')  show(total - 1);
+    if (e.ctrlKey && e.key === 's') { e.preventDefault(); toggleScript(); }
+  });
+
+  // 탭/클릭 네비게이션 — 화면 좌측 1/3은 이전, 우측 2/3은 다음
+  // 링크·버튼·인터랙티브 요소를 누른 경우는 무시
+  function isInteractive(el) {
+    while (el && el !== document.body) {
+      const tag = el.tagName;
+      if (tag === 'A' || tag === 'BUTTON' || tag === 'INPUT' ||
+          tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'LABEL') return true;
+      if (el.getAttribute && el.getAttribute('role') === 'button') return true;
+      el = el.parentElement;
+    }
+    return false;
+  }
+  // 클릭 슬라이드 전환 비활성화 — 키보드(←/→)와 스와이프만 사용
+
+  // 스와이프 — 모바일/터치 디바이스
+  let touchStartX = 0, touchStartY = 0, touchStartT = 0;
+  document.addEventListener('touchstart', e => {
+    if (e.touches.length !== 1) return;
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+    touchStartT = Date.now();
+  }, { passive: true });
+  document.addEventListener('touchend', e => {
+    if (isInteractive(e.target)) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - touchStartX;
+    const dy = t.clientY - touchStartY;
+    const dt = Date.now() - touchStartT;
+    // 가로 우세 + 일정 거리 + 1초 이내 → 스와이프로 간주
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5 && dt < 800) {
+      e.preventDefault();
+      if (dx < 0) go(1); else go(-1);
+    }
+    // 짧은 탭은 click 핸들러가 처리
+  }, { passive: false });
+
+  show(0);
+
+  // 첫 진입 네비 힌트 (한 번만 표시)
+  (function navHint() {
+    try {
+      if (localStorage.getItem('deck-hint-seen') === '1') return;
+    } catch (e) { /* localStorage 차단 환경 — 그래도 한 번은 보여주기 */ }
+    const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+    const hint = document.createElement('div');
+    hint.className = 'nav-hint';
+    hint.innerHTML = isTouch
+      ? '👆 좌·우 <b>탭</b> 또는 <b>스와이프</b>로 넘기세요'
+      : '<span class="nh-key">←</span><span class="nh-key">→</span> 또는 <b>클릭</b>으로 넘기세요';
+    document.body.appendChild(hint);
+    setTimeout(() => hint.classList.add('visible'), 400);
+    setTimeout(() => hint.classList.remove('visible'), 4200);
+    setTimeout(() => hint.remove(), 4900);
+    const markSeen = () => {
+      try { localStorage.setItem('deck-hint-seen', '1'); } catch (e) {}
+      document.removeEventListener('click', markSeen, true);
+      document.removeEventListener('keydown', markSeen, true);
+      document.removeEventListener('touchstart', markSeen, true);
+    };
+    document.addEventListener('click', markSeen, true);
+    document.addEventListener('keydown', markSeen, true);
+    document.addEventListener('touchstart', markSeen, true);
+  })();
+
+  // 초기 표지 bg 강제 적용 (show early return 우회)
+  { const transparent='rgba(0, 0, 0, 0)';
+    const fallback=getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()||'#f7f7f5';
+    const a=slides[0].dataset.bodyBg;
+    if(a){ if(a.includes('|')){const[l,r]=a.split('|');document.body.style.background=`linear-gradient(to right,${l} 50%,${r} 50%)`;}else{document.body.style.background=a;} }
+    else{ const bg=getComputedStyle(slides[0]).backgroundColor; document.body.style.background=(bg&&bg!==transparent)?bg:fallback; } }
+
+</script>
+</body>
+</html>
